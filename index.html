@@ -18,11 +18,13 @@
             --accent-primary: #3b82f6;
         }
 
-        body { 
-            font-family: 'Inter', system-ui, -apple-system, sans-serif; 
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
             background-color: var(--bg-app);
             color: var(--text-primary);
             -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
         }
 
         .font-mono { font-family: 'JetBrains Mono', monospace; }
@@ -146,7 +148,7 @@
             <div>
                 <div class="flex items-baseline gap-2">
                     <h1 class="text-sm font-semibold text-slate-900 leading-none">Intel Analyzer</h1>
-                    <span class="text-[10px] text-slate-400 font-mono">v2.1.12</span>
+                    <span class="text-[10px] text-slate-400 font-mono">v2.1.13</span>
                 </div>
                 <p id="fileNameDisplay" class="text-[10px] text-slate-500 font-medium mt-1 hidden"></p>
             </div>
@@ -185,11 +187,11 @@
             <!-- TOP KPI BANNER ROW -->
             <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4" id="summaryCard">
                 <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-3 md:p-4 flex flex-col justify-between hover:shadow-md transition-shadow">
-                    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Record</div>
+                    <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">Record</div>
                     <div id="displayRecord" class="text-3xl lg:text-4xl font-black text-slate-900 tracking-tight leading-none mt-1">0-0-0</div>
                 </div>
                 <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-3 md:p-4 flex flex-col justify-between hover:shadow-md transition-shadow">
-                    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Win Rate</div>
+                    <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">Win Rate</div>
                     <div id="displayWinRate" class="text-3xl lg:text-4xl font-black text-slate-700 tracking-tight leading-none mt-1 tabular-nums">0.0%</div>
                 </div>
                 <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-3 md:p-4 relative overflow-hidden flex flex-col justify-between group hover:shadow-md transition-shadow">
@@ -197,7 +199,7 @@
                          <canvas id="summarySparkline"></canvas>
                     </div>
                     <div class="relative z-10 flex justify-between items-start">
-                        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Net Profit</div>
+                        <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">Net Profit</div>
                         <span id="summaryLiveIndicator" class="hidden w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                     </div>
                     <div class="relative z-10 mt-1">
@@ -205,11 +207,11 @@
                     </div>
                 </div>
                 <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-3 md:p-4 flex flex-col justify-between hover:shadow-md transition-shadow">
-                    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">ROI</div>
+                    <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">ROI</div>
                     <div id="displayROI" class="text-3xl lg:text-4xl font-black text-slate-900 tracking-tight tabular-nums mt-1">0.00%</div>
                 </div>
                 <div class="col-span-2 md:col-span-4 lg:col-span-1 bg-slate-50/50 rounded-xl border border-slate-200 shadow-sm p-3 md:p-4 flex flex-col justify-center items-center text-center hover:bg-slate-50 transition-colors">
-                     <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Total Volume</div>
+                     <div class="text-xs text-slate-500 font-bold uppercase tracking-wider">Total Volume</div>
                      <div id="countDisplay" class="text-lg font-black text-slate-700 mt-1">0 Bets</div>
                      <div id="cardFileName" class="text-[9px] font-medium text-slate-300 mt-1 truncate max-w-[100px]"></div>
                 </div>
@@ -249,7 +251,7 @@
                 <div class="lg:col-span-4 flex flex-col gap-3 h-full">
                     <div id="recentFormCard" class="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">
                         <div class="p-2.5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 cursor-pointer hover:bg-slate-100 transition-colors" onclick="toggleRecentForm()">
-                            <div class="flex items-center gap-2"><h3 class="text-xs font-bold text-slate-700 uppercase tracking-wide">Recent Form</h3></div>
+                            <div class="flex items-center gap-2"><h3 class="text-sm font-bold text-slate-700 uppercase tracking-wide">Recent Form</h3></div>
                             <button class="text-slate-400 hover:text-blue-600 transition-colors"><svg id="recentFormChevron" class="w-4 h-4 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></button>
                         </div>
                         <div class="p-0">
@@ -258,19 +260,19 @@
                         </div>
                     </div>
                     <div id="betTypeContainer" class="bg-white rounded-xl border border-slate-200 shadow-sm p-0 flex flex-col overflow-hidden max-h-48 overflow-y-auto custom-scrollbar">
-                        <div class="p-2.5 border-b border-slate-100 bg-slate-50/50 sticky top-0 z-10"><h3 class="text-xs font-bold text-slate-700 uppercase tracking-wide">Bet Type Breakdown</h3></div>
+                        <div class="p-2.5 border-b border-slate-100 bg-slate-50/50 sticky top-0 z-10"><h3 class="text-sm font-bold text-slate-700 uppercase tracking-wide">Bet Type Breakdown</h3></div>
                         <div id="betTypeStats" class="flex-grow p-0"></div>
                     </div>
                     <div class="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col overflow-hidden" id="streakCard">
                         <div class="p-2.5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 cursor-pointer hover:bg-slate-100 transition-colors" onclick="toggleMomentum()">
-                           <div class="flex items-center gap-2"><h3 class="text-xs font-bold text-slate-700 uppercase tracking-wide">Momentum</h3><span id="currentStreakBadge" class="hidden text-[10px] px-1.5 py-0.5 rounded bg-white border border-slate-200 text-slate-500 font-medium"></span></div>
+                           <div class="flex items-center gap-2"><h3 class="text-sm font-bold text-slate-700 uppercase tracking-wide">Momentum</h3><span id="currentStreakBadge" class="hidden text-xs px-1.5 py-0.5 rounded bg-white border border-slate-200 text-slate-600 font-semibold"></span></div>
                            <button class="text-slate-400 hover:text-blue-600 transition-colors"><svg id="momentumChevron" class="w-4 h-4 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></button>
                        </div>
-                       <div class="flex-grow flex flex-col"><div id="activeStreakContainer" class="block"></div><div id="allStreaksContainer" class="hidden border-t border-slate-100"><div class="flex flex-col md:flex-row xl:flex-col divide-y md:divide-y-0 xl:divide-y divide-slate-100 md:divide-x xl:divide-x-0"><div class="flex-1 p-0"><div class="px-4 py-1.5 bg-slate-50/30 text-[10px] font-bold text-emerald-600 uppercase tracking-wider border-b border-slate-50">Following a Win</div><div class="overflow-x-auto"><table class="side-table text-xs text-left"><tbody id="streakTableWins" class="divide-y divide-slate-50"></tbody></table></div></div><div class="flex-1 p-0"><div class="px-4 py-1.5 bg-slate-50/30 text-[10px] font-bold text-rose-600 uppercase tracking-wider border-b border-slate-50">Following a Loss</div><div class="overflow-x-auto"><table class="side-table text-xs text-left"><tbody id="streakTableLosses" class="divide-y divide-slate-50"></tbody></table></div></div></div></div></div>
+                       <div class="flex-grow flex flex-col"><div id="activeStreakContainer" class="block"></div><div id="allStreaksContainer" class="hidden border-t border-slate-100"><div class="flex flex-col md:flex-row xl:flex-col divide-y md:divide-y-0 xl:divide-y divide-slate-100 md:divide-x xl:divide-x-0"><div class="flex-1 p-0"><div class="px-4 py-1.5 bg-slate-50/30 text-xs font-bold text-emerald-600 uppercase tracking-wider border-b border-slate-50">Following a Win</div><div class="overflow-x-auto"><table class="side-table text-xs text-left"><tbody id="streakTableWins" class="divide-y divide-slate-50"></tbody></table></div></div><div class="flex-1 p-0"><div class="px-4 py-1.5 bg-slate-50/30 text-xs font-bold text-rose-600 uppercase tracking-wider border-b border-slate-50">Following a Loss</div><div class="overflow-x-auto"><table class="side-table text-xs text-left"><tbody id="streakTableLosses" class="divide-y divide-slate-50"></tbody></table></div></div></div></div></div>
                     </div>
                     <div class="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col overflow-hidden" id="dayCard">
                         <div class="p-2.5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 cursor-pointer hover:bg-slate-100 transition-colors" onclick="toggleDaily()">
-                            <div class="flex items-center gap-2"><h3 class="text-xs font-bold text-slate-700 uppercase tracking-wide">Daily</h3><span id="todayBadge" class="hidden text-[10px] px-1.5 py-0.5 rounded bg-white border border-slate-200 text-slate-500 font-medium">Today</span></div>
+                            <div class="flex items-center gap-2"><h3 class="text-sm font-bold text-slate-700 uppercase tracking-wide">Daily</h3><span id="todayBadge" class="hidden text-xs px-1.5 py-0.5 rounded bg-white border border-slate-200 text-slate-600 font-semibold">Today</span></div>
                             <button class="text-slate-400 hover:text-blue-600 transition-colors"><svg id="dailyChevron" class="w-4 h-4 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></button>
                         </div>
                         <div class="overflow-x-auto"><table class="side-table text-xs text-left"><tbody id="dayStatsTable" class="divide-y divide-slate-50 text-slate-600"></tbody></table></div>
@@ -773,7 +775,7 @@
                 const wp = (w + l) > 0 ? (w / (w + l) * 100).toFixed(0) : '0', roi = wag > 0 ? (prof / wag * 100).toFixed(1) : '0.0';
                 const tr = document.createElement('tr'); tr.className = "hover:bg-slate-50";
                 const pc = prof > 0 ? "text-emerald-600 font-bold" : (prof < 0 ? "text-rose-600 font-bold" : "text-slate-400");
-                tr.innerHTML = `<td class="px-4 py-2 font-medium text-slate-700">${r.l}</td><td class="px-2 py-2 text-right text-xs"><div class="flex items-center justify-end gap-1.5"><span class="inline-block px-1.5 py-0.5 bg-slate-100 rounded text-slate-900 font-bold font-mono">${w}-${l}${p > 0 ? '-'+p : ''}</span><span class="text-[10px] text-slate-400 font-medium w-7 text-right">${wp}%</span></div></td><td class="px-4 py-2 text-right text-xs tabular-nums"><div class="flex items-baseline justify-end gap-1"><span class="${pc}">${prof > 0 ? '+' : ''}${prof.toFixed(1)}u</span><span class="text-[10px] text-slate-400">(${prof > 0 ? '+' : ''}${roi}%)</span></div></td>`;
+                tr.innerHTML = `<td class="px-4 py-2 font-semibold text-slate-700">${r.l}</td><td class="px-2 py-2 text-right text-xs"><div class="flex items-center justify-end gap-1.5"><span class="inline-block px-1.5 py-0.5 bg-slate-100 rounded text-slate-900 font-bold font-mono">${w}-${l}${p > 0 ? '-'+p : ''}</span><span class="text-xs text-slate-500 font-semibold w-8 text-right">${wp}%</span></div></td><td class="px-4 py-2 text-right text-xs tabular-nums"><div class="flex items-baseline justify-end gap-1"><span class="${pc}">${prof > 0 ? '+' : ''}${prof.toFixed(1)}u</span><span class="text-xs text-slate-500 font-medium">(${prof > 0 ? '+' : ''}${roi}%)</span></div></td>`;
                 r.t.appendChild(tr);
             });
         }
@@ -815,7 +817,7 @@
             s.forEach(item => {
                  const tr = document.createElement('tr'); tr.className = "hover:bg-slate-50";
                  const winP = (item.w + item.l) > 0 ? (item.w / (item.w + item.l) * 100).toFixed(0) : '0', roi = item.wag > 0 ? (item.prof / item.wag * 100).toFixed(1) : '0.0';
-                 tr.innerHTML = `<td class="px-4 py-2 font-medium text-slate-700">${item.n}</td><td class="px-2 py-2 text-right text-xs"><div class="flex items-center justify-end gap-1.5"><span class="inline-block px-1.5 py-0.5 bg-slate-100 rounded text-slate-900 font-bold font-mono">${item.w}-${item.l}${item.p > 0 ? '-'+item.p : ''}</span><span class="text-[10px] text-slate-400 font-medium w-7 text-right">${winP}%</span></div></td><td class="px-4 py-2 text-right text-xs tabular-nums"><div class="flex items-baseline justify-end gap-1"><span class="${item.prof > 0 ? "text-emerald-600 font-bold" : (item.prof < 0 ? "text-rose-600 font-bold" : "text-slate-400")}">${item.prof > 0 ? '+' : ''}${item.prof.toFixed(1)}u</span><span class="text-[10px] text-slate-400">(${item.prof > 0 ? '+' : ''}${roi}%)</span></div></td>`;
+                 tr.innerHTML = `<td class="px-4 py-2 font-semibold text-slate-700">${item.n}</td><td class="px-2 py-2 text-right text-xs"><div class="flex items-center justify-end gap-1.5"><span class="inline-block px-1.5 py-0.5 bg-slate-100 rounded text-slate-900 font-bold font-mono">${item.w}-${item.l}${item.p > 0 ? '-'+item.p : ''}</span><span class="text-xs text-slate-500 font-semibold w-8 text-right">${winP}%</span></div></td><td class="px-4 py-2 text-right text-xs tabular-nums"><div class="flex items-baseline justify-end gap-1"><span class="${item.prof > 0 ? "text-emerald-600 font-bold" : (item.prof < 0 ? "text-rose-600 font-bold" : "text-slate-400")}">${item.prof > 0 ? '+' : ''}${item.prof.toFixed(1)}u</span><span class="text-xs text-slate-500 font-medium">(${item.prof > 0 ? '+' : ''}${roi}%)</span></div></td>`;
                  tb.appendChild(tr);
             });
             betTypeStats.appendChild(table);
@@ -853,7 +855,7 @@
             sel.forEach(item => {
                 const card = document.createElement('div'), bC = item.fade ? 'border-rose-200 bg-rose-50/40' : 'border-emerald-100 bg-emerald-50/40', pC = item.fade ? 'text-rose-600' : 'text-emerald-600', bgC = item.fade ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700';
                 card.className = `rounded-lg p-3 border flex flex-col justify-between hover:shadow-md transition-all group ${bC}`;
-                card.innerHTML = `<div class="flex justify-between items-start mb-2"><div><div class="flex items-center"><div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">${item.dLabel}</div>${item.fade ? '<span class="ml-2 px-1.5 py-0.5 rounded bg-rose-600 text-white text-[9px] font-bold uppercase">Fade</span>' : ''}</div><div class="text-sm font-black text-slate-800 uppercase truncate max-w-[140px]">${item.label}</div></div><div class="text-xl font-bold ${pC} tracking-tight">${item.units > 0 ? '+' : ''}${item.units.toFixed(1)}u</div></div><div class="flex items-center gap-3 text-xs font-medium text-slate-500"><span class="text-slate-900 font-bold">${item.w}-${item.l}</span><span class="${bgC} px-1.5 rounded">${item.winPct.toFixed(0)}% Win</span><span>${item.roi.toFixed(0)}% ROI</span></div>`;
+                card.innerHTML = `<div class="flex justify-between items-start mb-2"><div><div class="flex items-center"><div class="text-xs font-bold text-slate-500 uppercase tracking-wider">${item.dLabel}</div>${item.fade ? '<span class="ml-2 px-1.5 py-0.5 rounded bg-rose-600 text-white text-[9px] font-bold uppercase">Fade</span>' : ''}</div><div class="text-sm font-black text-slate-800 uppercase truncate max-w-[140px]">${item.label}</div></div><div class="text-xl font-bold ${pC} tracking-tight">${item.units > 0 ? '+' : ''}${item.units.toFixed(1)}u</div></div><div class="flex items-center gap-3 text-xs font-medium text-slate-500"><span class="text-slate-900 font-bold">${item.w}-${item.l}</span><span class="${bgC} px-1.5 rounded">${item.winPct.toFixed(0)}% Win</span><span>${item.roi.toFixed(0)}% ROI</span></div>`;
                 smartInsightsCards.appendChild(card);
             });
         }
@@ -899,7 +901,7 @@
             renderCompactTable(streakTableWins, rows.filter(r => r.scenario.includes('W')).sort((a,b) => parseInt(a.scenario) - parseInt(b.scenario)), maxP, minP, activeK, (r) => selectMomentumRow(r.scenario));
             renderCompactTable(streakTableLosses, rows.filter(r => r.scenario.includes('L')).sort((a,b) => parseInt(a.scenario) - parseInt(b.scenario)), maxP, minP, activeK, (r) => selectMomentumRow(r.scenario));
             const activeC = document.getElementById('activeStreakContainer'); activeC.innerHTML = ''; const kShow = selectedMomentumKey || activeK;
-            if (kShow) { const rd = rows.find(r => r.scenario === kShow); if (rd) { const t = document.createElement('table'), tb = document.createElement('tbody'), h = document.createElement('div'); t.className = "side-table text-xs text-left"; h.className = `px-4 py-2 bg-slate-50/30 text-[10px] font-bold ${(kShow === activeK && !selectedMomentumKey) ? (kShow.includes('W') ? "text-emerald-600" : "text-rose-600") : "text-slate-600"} uppercase border-b border-slate-50`; h.innerText = (kShow === activeK && !selectedMomentumKey) ? (kShow.includes('W') ? "Following a Win" : "Following a Loss") : `View: Following ${kShow}`; renderSingleRow(tb, rd, maxP, minP, true); activeC.appendChild(h); t.appendChild(tb); activeC.appendChild(t); } else activeC.innerHTML = `<div class="p-4 text-center text-slate-400 text-[10px] italic">No data for ${kShow}</div>`; } else activeC.innerHTML = `<div class="p-4 text-center text-slate-400 text-[10px] italic">No active streak</div>`;
+            if (kShow) { const rd = rows.find(r => r.scenario === kShow); if (rd) { const t = document.createElement('table'), tb = document.createElement('tbody'), h = document.createElement('div'); t.className = "side-table text-xs text-left"; h.className = `px-4 py-2 bg-slate-50/30 text-xs font-bold ${(kShow === activeK && !selectedMomentumKey) ? (kShow.includes('W') ? "text-emerald-600" : "text-rose-600") : "text-slate-600"} uppercase border-b border-slate-50`; h.innerText = (kShow === activeK && !selectedMomentumKey) ? (kShow.includes('W') ? "Following a Win" : "Following a Loss") : `View: Following ${kShow}`; renderSingleRow(tb, rd, maxP, minP, true); activeC.appendChild(h); t.appendChild(tb); activeC.appendChild(t); } else activeC.innerHTML = `<div class="p-4 text-center text-slate-400 text-xs italic">No data for ${kShow}</div>`; } else activeC.innerHTML = `<div class="p-4 text-center text-slate-400 text-xs italic">No active streak</div>`;
         }
 
         function calculateAndRenderDayStats(data) {
@@ -914,7 +916,7 @@
                 const isP = st.prof > 0, isL = st.prof < 0; let rb = isP ? "bg-emerald-50/40" : (isL ? "bg-rose-50/40" : "hover:bg-slate-50"); if (idx === ti) rb = isP ? "bg-emerald-100/40" : (isL ? "bg-rose-100/40" : "bg-blue-50/50");
                 tr.className = `border-b border-slate-50 transition-colors stats-grid-row ${rb}`;
                 const wp = (st.w + st.l) > 0 ? (st.w / (st.w + st.l) * 100).toFixed(0) : '0', roi = st.wag > 0 ? (st.prof / st.wag * 100).toFixed(1) : '0.0', pb = st.prof > 0 ? (st.prof === maxP && !isDailyCollapsed ? "bg-emerald-100/50 text-emerald-700 px-1.5" : "text-emerald-600 font-bold") : (st.prof < 0 ? (st.prof === minP && !isDailyCollapsed ? "bg-rose-100/50 text-rose-700 px-1.5" : "text-rose-600 font-bold") : "text-slate-400");
-                tr.innerHTML = `<td class="px-4 py-2 font-medium text-slate-700"><div class="flex items-center gap-2">${st.dayName.substring(0, 3)}${idx === ti ? '<span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>' : ''}</div></td><td class="px-2 py-2 text-right text-xs"><div class="flex items-center justify-end gap-1.5"><span class="inline-block px-1.5 py-0.5 bg-slate-100 rounded text-slate-900 font-bold font-mono">${st.w}-${st.l}${st.p > 0 ? '-'+st.p : ''}</span><span class="text-[10px] text-slate-400 font-medium w-7 text-right">${wp}%</span></div></td><td class="px-4 py-2 text-right text-xs tabular-nums"><div class="flex items-baseline justify-end gap-1"><span class="${pb}">${st.prof > 0 ? '+' : ''}${st.prof.toFixed(1)}u</span><span class="text-[10px] text-slate-400">(${st.prof > 0 ? '+' : ''}${roi}%)</span></div></td>`;
+                tr.innerHTML = `<td class="px-4 py-2 font-semibold text-slate-700"><div class="flex items-center gap-2">${st.dayName.substring(0, 3)}${idx === ti ? '<span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>' : ''}</div></td><td class="px-2 py-2 text-right text-xs"><div class="flex items-center justify-end gap-1.5"><span class="inline-block px-1.5 py-0.5 bg-slate-100 rounded text-slate-900 font-bold font-mono">${st.w}-${st.l}${st.p > 0 ? '-'+st.p : ''}</span><span class="text-xs text-slate-500 font-semibold w-8 text-right">${wp}%</span></div></td><td class="px-4 py-2 text-right text-xs tabular-nums"><div class="flex items-baseline justify-end gap-1"><span class="${pb}">${st.prof > 0 ? '+' : ''}${st.prof.toFixed(1)}u</span><span class="text-xs text-slate-500 font-medium">(${st.prof > 0 ? '+' : ''}${roi}%)</span></div></td>`;
                 dayStatsTable.appendChild(tr);
             });
             if (dayStatsTable.children.length === 0) dayStatsTable.innerHTML = `<tr><td colspan="3" class="px-4 py-4 text-center text-slate-300 italic text-xs">No data</td></tr>`;
@@ -926,7 +928,7 @@
             tr.className = `border-b border-slate-50 transition-colors stats-grid-row ${rb}`;
             let pcStyle = isP ? (r.profit === maxP && !act ? "bg-emerald-100/50 text-emerald-700 px-1.5 rounded" : "text-emerald-600 font-bold") : (isL ? (r.profit === minP && !act ? "bg-rose-100/50 text-rose-700 px-1.5 rounded" : "text-rose-600 font-bold") : "text-slate-400");
             tr.innerHTML = `
-                <td class="px-4 py-2 font-medium text-slate-700 text-[11px]">
+                <td class="px-4 py-2 font-semibold text-slate-700 text-xs">
                     <div class="flex items-center gap-2">
                         ${r.scenario}
                         ${act ? '<span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>' : ''}
@@ -937,18 +939,18 @@
                         <span class="inline-block px-1.5 py-0.5 bg-slate-100 rounded text-slate-900 font-bold font-mono">
                             ${r.w}-${r.l}${r.p > 0 ? '-'+r.p : ''}
                         </span>
-                        <span class="text-[10px] text-slate-400 font-medium w-7 text-right">${r.winPct}%</span>
+                        <span class="text-xs text-slate-500 font-semibold w-8 text-right">${r.winPct}%</span>
                     </div>
                 </td>
                 <td class="px-4 py-2 text-right text-xs tabular-nums">
                     <div class="flex items-baseline justify-end gap-1">
                         <span class="${pcStyle}">${r.profit > 0 ? '+' : ''}${r.profit.toFixed(1)}u</span>
-                        <span class="text-[10px] text-slate-400">(${r.profit > 0 ? '+' : ''}${r.roi}%)</span>
+                        <span class="text-xs text-slate-500 font-medium">(${r.profit > 0 ? '+' : ''}${r.roi}%)</span>
                     </div>
                 </td>`;
             tb.appendChild(tr);
         }
-        function renderCompactTable(tb, rs, maxP, minP, ak, clickH) { tb.innerHTML = rs.length === 0 ? `<tr><td colspan="3" class="px-4 py-3 text-center text-slate-300 italic text-[10px]">No Data</td></tr>` : ''; rs.forEach(r => renderSingleRow(tb, r, maxP, minP, r.scenario === ak, clickH)); }
+        function renderCompactTable(tb, rs, maxP, minP, ak, clickH) { tb.innerHTML = rs.length === 0 ? `<tr><td colspan="3" class="px-4 py-3 text-center text-slate-300 italic text-xs">No Data</td></tr>` : ''; rs.forEach(r => renderSingleRow(tb, r, maxP, minP, r.scenario === ak, clickH)); }
 
         function renderChart(ls, data) {
             const ctx = document.getElementById('profitChart').getContext('2d'); if (chartInstance) chartInstance.destroy();
