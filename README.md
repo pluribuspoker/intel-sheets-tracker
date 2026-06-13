@@ -19,13 +19,11 @@ A client-side sports betting analytics dashboard that turns CSV exports into int
 - **Keyboard Navigation** — Full keyboard support for power users
 - **Fully Client-Side** — No server, no database. Your data never leaves your browser
 
-## Quick Start
+## Live App
 
-1. Clone the repo
-2. Open `sports_betting_stats_calculator.html` in your browser
-3. Click **Import CSV** and select your betting history file
+**[https://pluribuspoker.github.io/intel-sheets-tracker/](https://pluribuspoker.github.io/intel-sheets-tracker/)**
 
-That's it. No install, no build step, no dependencies to manage.
+Just open the link and import your CSV. No install, no build step, no dependencies to manage.
 
 ## CSV Format
 

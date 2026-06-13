@@ -1,6 +1,6 @@
 # Intel Analyzer
 
-Single-file sports betting analytics dashboard (`sports_betting_stats_calculator.html`).
+Single-file sports betting analytics dashboard (`index.html`). Hosted via GitHub Pages at https://pluribuspoker.github.io/intel-sheets-tracker/
 
 ## Architecture
 
