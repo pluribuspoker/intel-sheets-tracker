@@ -148,7 +148,7 @@
             <div>
                 <div class="flex items-baseline gap-2">
                     <h1 class="text-sm font-semibold text-slate-900 leading-none">Intel Analyzer</h1>
-                    <span class="text-[10px] text-slate-400 font-mono">v2.1.13</span>
+                    <span class="text-[10px] text-slate-400 font-mono cursor-pointer hover:text-blue-500 transition-colors" onclick="openChangelogModal()" title="View Changelog">v2.1.14</span>
                 </div>
                 <p id="fileNameDisplay" class="text-[10px] text-slate-500 font-medium mt-1 hidden"></p>
             </div>
@@ -373,6 +373,57 @@
         </div>
     </div>
 
+    <div id="changelogModal" class="fixed inset-0 bg-slate-900/60 z-[200] hidden flex items-center justify-center backdrop-blur-sm transition-all duration-300 opacity-0" onclick="if(event.target===this)closeChangelogModal()">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 transform transition-all duration-300 scale-95 opacity-0 flex flex-col max-h-[80vh]" id="changelogModalContent">
+            <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-xl">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900">Changelog</h3>
+                        <p class="text-xs text-slate-500">What's new in Intel Analyzer</p>
+                    </div>
+                </div>
+                <button onclick="closeChangelogModal()" class="text-slate-400 hover:text-slate-600 transition-colors p-1 rounded-md hover:bg-slate-200"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+            </div>
+            <div class="p-5 overflow-y-auto rounded-b-xl space-y-5">
+                <div>
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-xs font-bold text-slate-900 font-mono">v2.1.14</span>
+                        <span class="text-xs text-slate-400">Jun 13, 2026</span>
+                    </div>
+                    <ul class="space-y-1.5 text-sm text-slate-600">
+                        <li class="flex gap-2"><span class="text-emerald-500 font-bold shrink-0">+</span>Added changelog — click the version number to view</li>
+                        <li class="flex gap-2"><span class="text-blue-500 font-bold shrink-0">~</span>Improved text readability for Telegram screenshot compression — larger font sizes, bolder weights, higher contrast on breakdown tables</li>
+                    </ul>
+                </div>
+                <hr class="border-slate-100">
+                <div>
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-xs font-bold text-slate-900 font-mono">v2.1.12</span>
+                        <span class="text-xs text-slate-400">Jun 13, 2026</span>
+                    </div>
+                    <ul class="space-y-1.5 text-sm text-slate-600">
+                        <li class="flex gap-2"><span class="text-emerald-500 font-bold shrink-0">+</span>Support for varied team sheet formats — header detection now uses scoring instead of exact column names</li>
+                        <li class="flex gap-2"><span class="text-blue-500 font-bold shrink-0">~</span>Fixed bet-type/bet-description column collision</li>
+                        <li class="flex gap-2"><span class="text-blue-500 font-bold shrink-0">~</span>Prevented "DOG Odds" from false-matching as a position column</li>
+                    </ul>
+                </div>
+                <hr class="border-slate-100">
+                <div>
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-xs font-bold text-slate-900 font-mono">v2.1.11</span>
+                        <span class="text-xs text-slate-400">Jun 13, 2026</span>
+                    </div>
+                    <ul class="space-y-1.5 text-sm text-slate-600">
+                        <li class="flex gap-2"><span class="text-emerald-500 font-bold shrink-0">+</span>Initial release — single-file sports betting analytics dashboard with dynamic CSV parsing, filters, charts, and breakdown panels</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         const fileInput = document.getElementById('csvFile');
         const resultsArea = document.getElementById('resultsArea');
@@ -396,6 +447,8 @@
         const reportModalContent = document.getElementById('reportModalContent');
         const quickStatsModal = document.getElementById('quickStatsModal');
         const quickStatsModalContent = document.getElementById('quickStatsModalContent');
+        const changelogModal = document.getElementById('changelogModal');
+        const changelogModalContent = document.getElementById('changelogModalContent');
         const fullScreenLogModal = document.getElementById('fullScreenLogModal');
         const fsTableHeaders = document.getElementById('fsTableHeaders');
         const fsTableBody = document.getElementById('fsTableBody');
@@ -448,6 +501,8 @@
         function openQuickStatsModal() { quickStatsModal.classList.remove('hidden'); calculateAndRenderQuickStats(cachedFilteredData); requestAnimationFrame(() => { quickStatsModal.classList.remove('opacity-0'); quickStatsModalContent.classList.remove('scale-95', 'opacity-0'); }); }
         function closeQuickStatsModal() { quickStatsModal.classList.add('opacity-0'); quickStatsModalContent.classList.add('scale-95', 'opacity-0'); setTimeout(() => quickStatsModal.classList.add('hidden'), 300); }
         quickStatsModal.addEventListener('click', (e) => { if (e.target === quickStatsModal) closeQuickStatsModal(); });
+        function openChangelogModal() { changelogModal.classList.remove('hidden'); requestAnimationFrame(() => { changelogModal.classList.remove('opacity-0'); changelogModalContent.classList.remove('scale-95', 'opacity-0'); }); }
+        function closeChangelogModal() { changelogModal.classList.add('opacity-0'); changelogModalContent.classList.add('scale-95', 'opacity-0'); setTimeout(() => changelogModal.classList.add('hidden'), 300); }
 
         function extractSpread(text) {
             if (!text) return ''; const regex = /(?<!\w)([+-])\s*(\d+(?:\.\d+)?)/g; let matches = [], match;
