@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intel Analyzer Pro</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-app: #f8fafc;
+            --bg-card: #ffffff;
+            --border-subtle: #e2e8f0;
+            --text-primary: #0f172a;
+            --text-secondary: #64748b;
+            --accent-primary: #3b82f6;
+        }
+
+        body { 
+            font-family: 'Inter', system-ui, -apple-system, sans-serif; 
+            background-color: var(--bg-app);
+            color: var(--text-primary);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        .tabular-nums { font-variant-numeric: tabular-nums; }
+
+        /* Scrollbars */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-entry { animation: fadeInUp 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; opacity: 0; }
+        
+        @keyframes pulse-soft {
+            0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.2); }
+            70% { box-shadow: 0 0 0 6px rgba(59, 130, 246, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+        }
+        .pulse-update { animation: pulse-soft 0.8s ease-out; }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--border-subtle);
+        }
+
+        .stats-grid-row:hover td { opacity: 1; }
+        
+        .dropdown-menu { z-index: 100; }
+        
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+
+        /* High density table styles */
+        .hd-table th { background-color: #fcd34d; color: #1e293b; font-weight: 700; text-transform: uppercase; font-size: 0.65rem; padding: 4px 6px; border: 1px solid #000; }
+        .hd-table td { border: 1px solid #e2e8f0; font-size: 0.7rem; padding: 3px 6px; color: #0f172a; font-weight: 600; }
+        .hd-table tr:hover td { background-color: #fffbeb; }
+        .hd-table-container { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border: 1px solid #000; }
+
+        /* Keyboard Navigation Styles */
+        kbd {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-bottom-width: 2px;
+            border-radius: 3px;
+            font-size: 0.6em;
+            padding: 1px 4px;
+            font-family: inherit;
+            color: #94a3b8;
+            font-weight: 600;
+            display: inline-block;
+            vertical-align: middle;
+            margin-left: 4px;
+        }
+
+        .keyboard-active {
+            background-color: #f1f5f9 !important; /* slate-100 */
+            color: #0f172a !important;
+            position: relative;
+        }
+        .keyboard-active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background-color: #3b82f6; /* blue-500 */
+            border-top-left-radius: 2px;
+            border-bottom-left-radius: 2px;
+        }
+
+        /* Filter Bar Hover Effect */
+        #activeFiltersBar {
+            transition: all 0.2s ease;
+        }
+        #activeFiltersBar:hover {
+            border-color: #cbd5e1; /* slate-300 */
+            background-color: #fcfcfc;
+        }
+        
+        /* Date Input Styling */
+        input[type="date"] {
+            -webkit-appearance: none;
+            min-height: 30px;
+        }
+
+        /* Utility for horizontal scroll without visible bar */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Consistent Table Alignment Classes */
+        .side-table { table-layout: fixed; width: 100%; }
+        .side-table td:nth-child(1) { width: 35%; }
+        .side-table td:nth-child(2) { width: 30%; }
+        .side-table td:nth-child(3) { width: 35%; }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        slate: { 50: '#f8fafc', 100: '#f1f5f9', 200: '#e2e8f0', 300: '#cbd5e1', 400: '#94a3b8', 500: '#64748b', 600: '#475569', 700: '#334155', 800: '#1e293b', 900: '#0f172a' },
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="min-h-screen pb-12" onclick="closeAllDropdowns(event)" onkeydown="handleGlobalKeydown(event)">
+
+    <!-- Navigation / Header -->
+    <nav class="bg-white border-b border-slate-200 sticky top-0 z-40 px-4 md:px-8 py-3 flex items-center justify-between shadow-sm">
+        <div class="flex items-center gap-3">
+            <div class="bg-slate-900 text-white w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm tracking-tighter">IA</div>
+            <div>
+                <div class="flex items-baseline gap-2">
+                    <h1 class="text-sm font-semibold text-slate-900 leading-none">Intel Analyzer</h1>
+                    <span class="text-[10px] text-slate-400 font-mono">v2.1.12</span>
+                </div>
+                <p id="fileNameDisplay" class="text-[10px] text-slate-500 font-medium mt-1 hidden"></p>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-3">
+            <button onclick="openReportModal()" class="text-slate-400 hover:text-blue-600 transition-colors p-1.5 rounded-lg hover:bg-slate-50" title="Export Stats">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2-2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+            </button>
+            <div class="h-6 w-px bg-slate-200"></div>
+            <label class="group relative cursor-pointer flex items-center gap-2 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition-all text-xs font-medium text-slate-600">
+                <svg class="w-4 h-4 text-slate-400 group-hover:text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                <span>Import CSV</span>
+                <input type="file" id="csvFile" accept=".csv" class="hidden" />
+            </label>
+        </div>
+    </nav>
+
+    <div class="max-w-[1600px] mx-auto p-4 md:p-6 space-y-4">
+        
+        <!-- Main Dashboard Area -->
+        <div id="resultsArea" class="hidden space-y-4">
+
+            <!-- Active Filters Bar -->
+            <div id="activeFiltersBar" class="hidden flex-wrap items-center gap-2 animate-entry mb-2 cursor-text border border-transparent rounded-lg p-1">
+                <button id="addFilterBtn" onclick="openColumnSelector(event)" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 hover:border-blue-300 rounded-md transition-all shadow-sm">
+                    <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
+                    Add Filter
+                </button>
+                <div class="h-5 w-px bg-slate-200 mx-1"></div>
+                <div id="filterTags" class="flex flex-wrap gap-2 items-center"></div>
+                <button id="clearAllBtn" onclick="clearAllFilters()" class="hidden text-[10px] font-bold text-rose-600 hover:bg-rose-50 px-2 py-1 rounded ml-auto uppercase tracking-wide">Reset</button>
+                <button onclick="openQuickStatsModal()" class="md:hidden ml-auto flex items-center gap-1.5 px-3 py-1.5 bg-yellow-50 hover:bg-yellow-100 border border-yellow-200 rounded-lg transition-all text-xs font-bold text-yellow-700">Stats</button>
+            </div>
+            
+            <!-- TOP KPI BANNER ROW -->
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4" id="summaryCard">
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-3 md:p-4 flex flex-col justify-between hover:shadow-md transition-shadow">
+                    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Record</div>
+                    <div id="displayRecord" class="text-3xl lg:text-4xl font-black text-slate-900 tracking-tight leading-none mt-1">0-0-0</div>
+                </div>
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-3 md:p-4 flex flex-col justify-between hover:shadow-md transition-shadow">
+                    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Win Rate</div>
+                    <div id="displayWinRate" class="text-3xl lg:text-4xl font-black text-slate-700 tracking-tight leading-none mt-1 tabular-nums">0.0%</div>
+                </div>
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-3 md:p-4 relative overflow-hidden flex flex-col justify-between group hover:shadow-md transition-shadow">
+                    <div class="absolute inset-0 top-0 bottom-0 w-full opacity-10 pointer-events-none z-0">
+                         <canvas id="summarySparkline"></canvas>
+                    </div>
+                    <div class="relative z-10 flex justify-between items-start">
+                        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Net Profit</div>
+                        <span id="summaryLiveIndicator" class="hidden w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    </div>
+                    <div class="relative z-10 mt-1">
+                        <div id="displayProfit" class="text-3xl lg:text-4xl font-black text-slate-900 tracking-tight leading-none tabular-nums">0.00u</div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-3 md:p-4 flex flex-col justify-between hover:shadow-md transition-shadow">
+                    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">ROI</div>
+                    <div id="displayROI" class="text-3xl lg:text-4xl font-black text-slate-900 tracking-tight tabular-nums mt-1">0.00%</div>
+                </div>
+                <div class="col-span-2 md:col-span-4 lg:col-span-1 bg-slate-50/50 rounded-xl border border-slate-200 shadow-sm p-3 md:p-4 flex flex-col justify-center items-center text-center hover:bg-slate-50 transition-colors">
+                     <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Total Volume</div>
+                     <div id="countDisplay" class="text-lg font-black text-slate-700 mt-1">0 Bets</div>
+                     <div id="cardFileName" class="text-[9px] font-medium text-slate-300 mt-1 truncate max-w-[100px]"></div>
+                </div>
+            </div>
+
+            <!-- MAIN GRID -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+                <div class="lg:col-span-8 bg-white rounded-xl border border-slate-200 shadow-sm p-4 flex flex-col min-h-[420px] h-full">
+                    <div class="flex justify-between items-center mb-2">
+                        <div>
+                            <h2 class="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                                <span id="chartHeaderFileName" class="truncate max-w-[250px] md:max-w-[500px]">Overview</span>
+                            </h2>
+                            <p class="text-xs text-slate-400 mt-0.5" id="chartSubtitle">Profit Graph</p>
+                        </div>
+                    </div>
+                    <div class="relative w-full flex-grow h-64">
+                        <div class="absolute inset-0 w-full h-full">
+                            <canvas id="profitChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-slate-100">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-xs font-bold text-slate-800 flex items-center gap-1.5 uppercase tracking-wide">
+                                <svg class="w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"></path></svg>
+                                Top Insights
+                            </h3>
+                            <button onclick="openQuickStatsModal()" class="text-[10px] font-bold text-blue-600 hover:text-blue-700 hover:bg-blue-50 px-2 py-1 rounded transition-colors flex items-center gap-1 group">
+                                View Full Breakdown
+                                <svg class="w-3 h-3 transform group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                            </button>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3" id="smartInsightsCards"></div>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-4 flex flex-col gap-3 h-full">
+                    <div id="recentFormCard" class="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">
+                        <div class="p-2.5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 cursor-pointer hover:bg-slate-100 transition-colors" onclick="toggleRecentForm()">
+                            <div class="flex items-center gap-2"><h3 class="text-xs font-bold text-slate-700 uppercase tracking-wide">Recent Form</h3></div>
+                            <button class="text-slate-400 hover:text-blue-600 transition-colors"><svg id="recentFormChevron" class="w-4 h-4 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></button>
+                        </div>
+                        <div class="p-0">
+                            <table class="side-table text-xs text-left"><tbody id="recentFormTableBody" class="divide-y divide-slate-50"></tbody></table>
+                            <div id="recentFormExpanded" class="hidden divide-y divide-slate-50 border-t border-slate-50"><table class="side-table text-xs text-left"><tbody id="recentFormExpandedBody" class="divide-y divide-slate-50"></tbody></table></div>
+                        </div>
+                    </div>
+                    <div id="betTypeContainer" class="bg-white rounded-xl border border-slate-200 shadow-sm p-0 flex flex-col overflow-hidden max-h-48 overflow-y-auto custom-scrollbar">
+                        <div class="p-2.5 border-b border-slate-100 bg-slate-50/50 sticky top-0 z-10"><h3 class="text-xs font-bold text-slate-700 uppercase tracking-wide">Bet Type Breakdown</h3></div>
+                        <div id="betTypeStats" class="flex-grow p-0"></div>
+                    </div>
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col overflow-hidden" id="streakCard">
+                        <div class="p-2.5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 cursor-pointer hover:bg-slate-100 transition-colors" onclick="toggleMomentum()">
+                           <div class="flex items-center gap-2"><h3 class="text-xs font-bold text-slate-700 uppercase tracking-wide">Momentum</h3><span id="currentStreakBadge" class="hidden text-[10px] px-1.5 py-0.5 rounded bg-white border border-slate-200 text-slate-500 font-medium"></span></div>
+                           <button class="text-slate-400 hover:text-blue-600 transition-colors"><svg id="momentumChevron" class="w-4 h-4 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></button>
+                       </div>
+                       <div class="flex-grow flex flex-col"><div id="activeStreakContainer" class="block"></div><div id="allStreaksContainer" class="hidden border-t border-slate-100"><div class="flex flex-col md:flex-row xl:flex-col divide-y md:divide-y-0 xl:divide-y divide-slate-100 md:divide-x xl:divide-x-0"><div class="flex-1 p-0"><div class="px-4 py-1.5 bg-slate-50/30 text-[10px] font-bold text-emerald-600 uppercase tracking-wider border-b border-slate-50">Following a Win</div><div class="overflow-x-auto"><table class="side-table text-xs text-left"><tbody id="streakTableWins" class="divide-y divide-slate-50"></tbody></table></div></div><div class="flex-1 p-0"><div class="px-4 py-1.5 bg-slate-50/30 text-[10px] font-bold text-rose-600 uppercase tracking-wider border-b border-slate-50">Following a Loss</div><div class="overflow-x-auto"><table class="side-table text-xs text-left"><tbody id="streakTableLosses" class="divide-y divide-slate-50"></tbody></table></div></div></div></div></div>
+                    </div>
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col overflow-hidden" id="dayCard">
+                        <div class="p-2.5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 cursor-pointer hover:bg-slate-100 transition-colors" onclick="toggleDaily()">
+                            <div class="flex items-center gap-2"><h3 class="text-xs font-bold text-slate-700 uppercase tracking-wide">Daily</h3><span id="todayBadge" class="hidden text-[10px] px-1.5 py-0.5 rounded bg-white border border-slate-200 text-slate-500 font-medium">Today</span></div>
+                            <button class="text-slate-400 hover:text-blue-600 transition-colors"><svg id="dailyChevron" class="w-4 h-4 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></button>
+                        </div>
+                        <div class="overflow-x-auto"><table class="side-table text-xs text-left"><tbody id="dayStatsTable" class="divide-y divide-slate-50 text-slate-600"></tbody></table></div>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-12 bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col overflow-hidden h-[500px]">
+                    <div class="p-4 border-b border-slate-200 flex justify-between items-center bg-white sticky top-0 z-20">
+                        <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2"><svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>Wager Log</h3>
+                        <button onclick="openFullScreenLog()" class="text-slate-400 hover:text-blue-600 transition-colors p-1 hover:bg-slate-100 rounded" title="Full Screen View"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg></button>
+                    </div>
+                    <div class="overflow-auto custom-scrollbar flex-grow bg-slate-50">
+                        <table class="w-full text-xs text-left border-collapse">
+                            <thead class="text-[10px] text-slate-500 font-semibold uppercase tracking-wider bg-slate-100 sticky top-0 z-10 shadow-sm"><tr id="tableHeaders"></tr></thead>
+                            <tbody id="tableBody" class="divide-y divide-slate-200 bg-white font-mono text-slate-600"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Dropdown Template -->
+    <div id="filterDropdownTemplate" class="dropdown-menu hidden absolute bg-white border border-slate-200 rounded-lg shadow-xl w-80 text-sm text-slate-700 flex flex-col mt-1 animate-entry" onclick="event.stopPropagation()">
+        <div id="spreadShortcuts" class="hidden flex justify-between gap-2 p-2 border-b border-slate-100 bg-slate-50 rounded-t-lg">
+            <button onclick="setSpreadFilter('fav')" class="flex-1 px-2 py-1 text-[10px] font-bold uppercase text-white bg-slate-700 hover:bg-slate-800 rounded shadow-sm transition-all">Favs (-)</button>
+            <button onclick="setSpreadFilter('dog')" class="flex-1 px-2 py-1 text-[10px] font-bold uppercase text-white bg-slate-400 hover:bg-slate-500 rounded shadow-sm transition-all">Dogs (+)</button>
+        </div>
+        <div class="numeric-range-container hidden flex gap-2 p-2 border-b border-slate-100 bg-slate-50 rounded-t-lg">
+            <input type="number" step="0.1" id="filterMin" class="w-1/2 px-2 py-1.5 border border-slate-300 rounded text-xs focus:ring-1 focus:ring-blue-500 outline-none tabular-nums" placeholder="Min" onkeydown="handleInputEnter(event, this)">
+            <input type="number" step="0.1" id="filterMax" class="w-1/2 px-2 py-1.5 border border-slate-300 rounded text-xs focus:ring-1 focus:ring-blue-500 outline-none tabular-nums" placeholder="Max" onkeydown="handleInputEnter(event, this)">
+        </div>
+        <div class="date-range-container hidden flex flex-col gap-2 p-2 border-b border-slate-100 bg-slate-50 rounded-t-lg">
+            <div class="flex gap-2">
+                <input type="date" id="filterDateMin" class="w-1/2 px-2 py-1.5 border border-slate-300 rounded text-xs focus:ring-1 focus:ring-blue-500 outline-none font-mono" placeholder="Start">
+                <input type="date" id="filterDateMax" class="w-1/2 px-2 py-1.5 border border-slate-300 rounded text-xs focus:ring-1 focus:ring-blue-500 outline-none font-mono" placeholder="End">
+            </div>
+            <div class="grid grid-cols-2 gap-1.5">
+                <button onclick="setDateFilterShortcut('thisMonth')" class="px-2 py-1 text-[10px] font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-100 rounded">This Month</button>
+                <button onclick="setDateFilterShortcut('lastMonth')" class="px-2 py-1 text-[10px] font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-100 rounded">Last Month</button>
+                <button onclick="setDateFilterShortcut('last30')" class="px-2 py-1 text-[10px] font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-100 rounded">Last 30 Days</button>
+                <button onclick="setDateFilterShortcut('ytd')" class="px-2 py-1 text-[10px] font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-100 rounded">YTD</button>
+            </div>
+        </div>
+        <div class="p-2 border-b border-slate-100" id="filterSearchContainer"><input type="text" class="filter-search w-full px-2 py-1.5 border border-slate-300 rounded text-xs focus:ring-1 focus:ring-blue-500 outline-none" placeholder="Search values..." onkeydown="handleInputEnter(event, this)"></div>
+        <div class="flex justify-between px-3 py-2 text-[10px] font-bold text-blue-600 border-b border-slate-100 bg-slate-50" id="filterSelectControls"><button class="hover:text-blue-800" onclick="toggleFilterSelectAll(this, true)">SELECT ALL</button><button class="hover:text-blue-800" onclick="toggleFilterSelectAll(this, false)">CLEAR</button></div>
+        <div class="filter-list max-h-48 overflow-y-auto p-1 space-y-0.5 custom-scrollbar"></div>
+        <div class="p-2 border-t border-slate-100 flex justify-end gap-2 bg-slate-50 rounded-b-lg">
+            <button class="px-3 py-1.5 text-xs font-semibold text-slate-500 hover:bg-slate-200 rounded transition-colors" onclick="closeFilterDropdown(this)">Cancel <kbd>Esc</kbd></button>
+            <button class="px-3 py-1.5 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded shadow-sm transition-colors" onclick="applyFilter(this)">Apply <kbd>↵</kbd></button>
+        </div>
+    </div>
+
+    <!-- Column Selector Template -->
+    <div id="columnSelectorTemplate" class="dropdown-menu hidden absolute bg-white border border-slate-200 rounded-lg shadow-2xl w-[560px] text-sm text-slate-700 flex flex-col mt-1 animate-entry" onclick="event.stopPropagation()">
+        <div class="px-4 py-3 border-b border-slate-100 bg-slate-50 rounded-t-lg flex justify-between items-center">
+             <span class="text-[11px] font-black text-slate-500 uppercase tracking-widest">Select Filter Category</span>
+             <span class="text-[9px] text-slate-300">Use <kbd>↑↓</kbd> to navigate</span>
+        </div>
+        <div class="column-list max-h-[500px] overflow-y-auto p-2 custom-scrollbar grid grid-cols-2 gap-1 items-start content-start"></div>
+    </div>
+
+    <!-- TEXT REPORT MODAL -->
+    <div id="reportModal" class="fixed inset-0 bg-slate-900/60 z-[200] hidden flex items-center justify-center backdrop-blur-sm transition-all duration-300 opacity-0">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 transform transition-all duration-300 scale-95 opacity-0 flex flex-col max-h-[90vh]" id="reportModalContent">
+            <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-xl">
+                <div><h3 class="text-base font-bold text-slate-900">Analysis Export</h3></div>
+                <button onclick="closeReportModal()" class="text-slate-400 hover:text-slate-600 transition-colors p-1 rounded-md hover:bg-slate-200"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+            </div>
+            <div class="p-6 overflow-hidden flex flex-col flex-grow">
+                <div id="modalStatsBox" class="stats-box text-xs bg-slate-50 text-slate-600 border border-slate-200 rounded-lg p-3 font-mono leading-relaxed overflow-y-auto flex-grow shadow-inner"></div>
+                <div class="mt-5 flex justify-end gap-3 shrink-0">
+                    <button onclick="closeReportModal()" class="px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100 rounded-lg transition-colors">Close</button>
+                    <button onclick="copyStats()" class="px-4 py-2 text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 rounded-lg shadow-sm transition-colors flex items-center gap-2"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg><span id="modalCopyBtnText">Copy to Clipboard</span></button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- FULL SCREEN LOG MODAL -->
+    <div id="fullScreenLogModal" class="fixed inset-0 bg-white z-[250] hidden flex flex-col animate-entry">
+        <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-white shadow-sm shrink-0">
+            <div class="flex items-center gap-3"><div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg></div><div><h3 class="text-lg font-bold text-slate-900">Wager Log (Full View)</h3><p class="text-xs text-slate-500">View and filter all records</p></div></div>
+            <button onclick="closeFullScreenLog()" class="group flex items-center gap-2 px-3 py-2 text-sm font-semibold text-slate-500 hover:bg-slate-100 rounded-lg transition-all border border-slate-200 hover:border-slate-300"><span>Close View</span><kbd class="hidden md:inline-block px-1.5 py-0.5 text-[10px] bg-slate-100 border border-slate-300 rounded text-slate-500 group-hover:bg-white">ESC</kbd></button>
+        </div>
+        <div class="flex-grow overflow-auto bg-slate-50 p-0"><div class="min-w-full inline-block align-middle"><table class="w-full text-xs text-left border-collapse"><thead class="text-[10px] text-slate-500 font-semibold uppercase tracking-wider bg-slate-100 sticky top-0 z-10 shadow-sm"><tr id="fsTableHeaders"></tr></thead><tbody id="fsTableBody" class="divide-y divide-slate-200 bg-white font-mono text-slate-600"></tbody></table></div></div>
+        <div class="px-6 py-2 bg-slate-50 border-t border-slate-200 text-[10px] text-slate-400 shrink-0 text-right">Intel Analyzer Pro • Full Screen Mode</div>
+    </div>
+    
+    <!-- DETAILED STATS MODAL -->
+    <div id="quickStatsModal" class="fixed inset-0 bg-slate-900/60 z-[200] hidden flex items-center justify-center backdrop-blur-sm transition-all duration-300 opacity-0">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-6xl mx-4 transform transition-all duration-300 scale-95 opacity-0 flex flex-col max-h-[90vh]" id="quickStatsModalContent">
+            <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-xl">
+                 <div class="flex items-center gap-3"><div class="w-8 h-8 rounded-lg bg-yellow-400 flex items-center justify-center text-white"><svg class="w-4 h-4 text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg></div><div><h3 class="text-base font-bold text-slate-900">Performance Breakdown</h3><p class="text-xs text-slate-500">Detailed metrics across all dimensions</p></div></div>
+                <button onclick="closeQuickStatsModal()" class="text-slate-400 hover:text-slate-600 transition-colors p-1 rounded-md hover:bg-slate-200"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+            </div>
+            <div class="p-6 overflow-y-auto bg-slate-50 rounded-b-xl flex-grow"><div class="grid grid-cols-1 lg:grid-cols-2 gap-6" id="quickStatsGrid"></div></div>
+        </div>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('csvFile');
+        const resultsArea = document.getElementById('resultsArea');
+        const modalStatsBox = document.getElementById('modalStatsBox'); 
+        const tableBody = document.getElementById('tableBody');
+        const tableHeaders = document.getElementById('tableHeaders');
+        const countDisplay = document.getElementById('countDisplay');
+        const streakTableWins = document.getElementById('streakTableWins');
+        const streakTableLosses = document.getElementById('streakTableLosses');
+        const currentStreakBadge = document.getElementById('currentStreakBadge');
+        const dayStatsTable = document.getElementById('dayStatsTable');
+        const todayBadge = document.getElementById('todayBadge');
+        const betTypeStats = document.getElementById('betTypeStats');
+        const smartInsightsCards = document.getElementById('smartInsightsCards');
+        const displayProfit = document.getElementById('displayProfit');
+        const displayROI = document.getElementById('displayROI');
+        const displayWinRate = document.getElementById('displayWinRate');
+        const displayRecord = document.getElementById('displayRecord');
+        const trendIndicator = document.getElementById('trendIndicator');
+        const reportModal = document.getElementById('reportModal');
+        const reportModalContent = document.getElementById('reportModalContent');
+        const quickStatsModal = document.getElementById('quickStatsModal');
+        const quickStatsModalContent = document.getElementById('quickStatsModalContent');
+        const fullScreenLogModal = document.getElementById('fullScreenLogModal');
+        const fsTableHeaders = document.getElementById('fsTableHeaders');
+        const fsTableBody = document.getElementById('fsTableBody');
+        let isFullScreenLogOpen = false;
+        const quickStatsGrid = document.getElementById('quickStatsGrid');
+        const activeFiltersBar = document.getElementById('activeFiltersBar');
+        const recentFormTableBody = document.getElementById('recentFormTableBody');
+        const recentFormExpandedBody = document.getElementById('recentFormExpandedBody');
+        let isRecentFormCollapsed = true;
+        let isMomentumCollapsed = true;
+        let isDailyCollapsed = true;
+        let cachedFilteredData = [];
+        let selectedMomentumKey = null;
+        let selectedDayIndex = null;
+        let chartInstance = null;
+        let summarySparklineInstance = null;
+        let allPicksData = []; 
+        let dynamicColumns = []; 
+        let previousCount = 0; 
+        let activeFilters = {}; 
+        let numericFilters = {}; 
+        let activeFilterKeys = []; 
+        let keyMap = {};
+
+        function cleanFileName(rawName) {
+            let name = rawName.replace(/\.[^/.]+$/, "");
+            name = name.replace(/^cappers\s+detailed\s+stats\s*[-–]?\s*/i, '');
+            name = name.replace(/[-_]?\s*sheet\s*\d*\s*/gi, ' ').replace(/\s*\(\d+\)\s*/g, ' ').replace(/[_-]/g, ' ').replace(/\s+/g, ' ').trim();
+            const words = name.split(' ');
+            if (words.length >= 2 && words.length % 2 === 0) { const mid = words.length / 2; if (words.slice(0, mid).join(' ').toLowerCase() === words.slice(mid).join(' ').toLowerCase()) return words.slice(0, mid).join(' '); }
+            return name;
+        }
+
+        fileInput.addEventListener('change', function(event) {
+            const file = event.target.files[0]; if (!file) return;
+            const cName = cleanFileName(file.name);
+            document.getElementById('fileNameDisplay').textContent = `Loaded: ${cName}`; document.getElementById('fileNameDisplay').classList.remove('hidden');
+            const cardFN = document.getElementById('cardFileName'); if (cardFN) { cardFN.textContent = cName; cardFN.classList.remove('hidden'); }
+            const chartHFN = document.getElementById('chartHeaderFileName'); if (chartHFN) chartHFN.textContent = cName;
+            Papa.parse(file, { header: false, skipEmptyLines: true, complete: function(results) { processWithDynamicStart(results.data); activeFilters = {}; numericFilters = {}; activeFilterKeys = []; selectedMomentumKey = null; selectedDayIndex = null; renderHeaders(tableHeaders); resultsArea.classList.remove('hidden'); updateDashboard(); } });
+        });
+        
+        activeFiltersBar.addEventListener('click', function(e) { if (e.target === activeFiltersBar || e.target.id === 'filterTags') openColumnSelector(e, document.getElementById('addFilterBtn'), {x: e.clientX, y: e.clientY}); });
+
+        function toggleMomentum() { isMomentumCollapsed = !isMomentumCollapsed; document.getElementById('momentumChevron').classList.toggle('rotate-180', !isMomentumCollapsed); document.getElementById('allStreaksContainer').classList.toggle('hidden', isMomentumCollapsed); document.getElementById('activeStreakContainer').classList.toggle('hidden', !isMomentumCollapsed); }
+        function toggleDaily() { isDailyCollapsed = !isDailyCollapsed; document.getElementById('dailyChevron').classList.toggle('rotate-180', !isDailyCollapsed); if(cachedFilteredData.length > 0) calculateAndRenderDayStats(cachedFilteredData); }
+        function toggleRecentForm() { isRecentFormCollapsed = !isRecentFormCollapsed; document.getElementById('recentFormChevron').classList.toggle('rotate-180', !isRecentFormCollapsed); document.getElementById('recentFormExpanded').classList.toggle('hidden', isRecentFormCollapsed); }
+        function selectMomentumRow(key) { selectedMomentumKey = key; if(!isMomentumCollapsed) toggleMomentum(); calculateAndRenderStreaks(cachedFilteredData); }
+        function selectDayRow(index) { selectedDayIndex = index; if(!isDailyCollapsed) toggleDaily(); else calculateAndRenderDayStats(cachedFilteredData); }
+        function openQuickStatsModal() { quickStatsModal.classList.remove('hidden'); calculateAndRenderQuickStats(cachedFilteredData); requestAnimationFrame(() => { quickStatsModal.classList.remove('opacity-0'); quickStatsModalContent.classList.remove('scale-95', 'opacity-0'); }); }
+        function closeQuickStatsModal() { quickStatsModal.classList.add('opacity-0'); quickStatsModalContent.classList.add('scale-95', 'opacity-0'); setTimeout(() => quickStatsModal.classList.add('hidden'), 300); }
+        quickStatsModal.addEventListener('click', (e) => { if (e.target === quickStatsModal) closeQuickStatsModal(); });
+
+        function extractSpread(text) {
+            if (!text) return ''; const regex = /(?<!\w)([+-])\s*(\d+(?:\.\d+)?)/g; let matches = [], match;
+            while ((match = regex.exec(text)) !== null) matches.push((match[1] === '-' ? -1 : 1) * parseFloat(match[2]));
+            const valid = matches.filter(n => Math.abs(n) < 60); if (valid.length > 0) return valid[0];
+            return /\b(pk|pick|ev|even)\b/i.test(text) ? 0 : '';
+        }
+
+        function processWithDynamicStart(rows) {
+            allPicksData = []; dynamicColumns = []; keyMap = {}; let hIdx = -1, rawH = [];
+            for (let i = 0; i < rows.length; i++) { const rowStr = rows[i].map(c => String(c).toLowerCase()); if ((rowStr.includes('play') || rowStr.includes('pick') || rowStr.includes('team')) && (rowStr.includes('odds') || rowStr.includes('units') || rowStr.includes('league') || rowStr.includes('profit'))) { hIdx = i; rawH = rows[i]; break; } }
+            if (hIdx === -1) { hIdx = 0; rawH = rows[0]; }
+            const colMap = {};
+            rawH.forEach((h, idx) => {
+                if(h && h.trim() !== '') {
+                    const lH = h.trim().toLowerCase(); if (lH.includes('units per month')) return;
+                    if (lH.includes('profit dynamics')) { let hasT = false; for (let r = hIdx + 1; r < Math.min(rows.length, hIdx + 20); r++) if (rows[r][idx] && isNaN(parseFloat(rows[r][idx]))) { hasT = true; break; } if (!hasT) return; }
+                    let key = h.trim(); if(colMap[key] !== undefined) key = `${key}_${idx}`; colMap[key] = idx;
+                    dynamicColumns.push({ key: key, label: h.trim(), index: idx, type: 'text', align: 'left' });
+                }
+            });
+            dynamicColumns.forEach(col => {
+                let nC = 0, vC = 0, dC = 0; for(let i = hIdx + 1; i < Math.min(rows.length, hIdx + 21); i++) if(rows[i][col.index] && rows[i][col.index].trim() !== '') { vC++; if(!isNaN(parseFloat(rows[i][col.index])) && isFinite(rows[i][col.index])) nC++; if (/^\d{1,4}[-\/]\d{1,2}[-\/]\d{1,4}/.test(rows[i][col.index].trim())) dC++; }
+                if (vC > 0) { if (nC / vC > 0.8) { col.type = 'number'; col.align = 'right'; } else if ((dC / vC > 0.5) || col.label.toLowerCase().includes('date') || col.label.toLowerCase().includes('time')) { col.type = 'date'; col.align = 'left'; } }
+            });
+            const findK = (ks) => dynamicColumns.find(c => ks.some(k => c.label.toLowerCase().includes(k)))?.key;
+            const pK = findK(['profit', 'return', 'net']), uK = findK(['units', 'wagered']), dK = findK(['date', 'time']), dyK = findK(['day', 'dow']), rK = findK(['result', 'w/l', 'status']), bK = findK(['pick', 'play', 'bet', 'team']), sK = findK(['spread', 'line']), lK = findK(['league', 'sport']), tK = findK(['type', 'market', 'wager type']) || '_sys_type', posK = findK(['position', 'fav/dog', 'fav', 'dog']) || '_sys_position';
+            if (tK === '_sys_type') dynamicColumns.push({ key: tK, label: 'Bet Type', index: -1, type: 'text', align: 'left' });
+            if (posK === '_sys_position') dynamicColumns.push({ key: posK, label: 'Position', index: -1, type: 'text', align: 'left' });
+            keyMap = { league: lK, bet: bK, spread: sK, day: dyK, type: tK, position: posK };
+            const sEK = bK ? 'spread_ext' : null; if (sEK) dynamicColumns.push({ key: sEK, label: 'SPREAD (EXT)', index: -1, type: 'number', align: 'right' });
+            let idC = 1;
+            for (let i = hIdx + 1; i < rows.length; i++) {
+                if (!rows[i] || rows[i].length < 2) continue; const rowD = { _internalId: (idC++).toString(), _originalIndex: i };
+                dynamicColumns.forEach(c => { if (c.index !== -1) rowD[c.key] = rows[i][c.index] ? rows[i][c.index].trim() : ''; });
+                if (sEK && rowD[bK]) rowD[sEK] = extractSpread(rowD[bK]);
+                const profit = parseFloat(pK ? rowD[pK] : '0') || 0, units = parseFloat(uK ? rowD[uK] : '0') || 0, rDate = dK ? rowD[dK] : '';
+                if (pK && isNaN(parseFloat(rowD[pK])) && rowD[pK] === '') continue;
+                let dayIdx = -1; if (dyK && rowD[dyK]) { const ds = rowD[dyK].toLowerCase(); if (ds.startsWith('sun')) dayIdx = 0; else if (ds.startsWith('mon')) dayIdx = 1; else if (ds.startsWith('tue')) dayIdx = 2; else if (ds.startsWith('wed')) dayIdx = 3; else if (ds.startsWith('thu')) dayIdx = 4; else if (ds.startsWith('fri')) dayIdx = 5; else if (ds.startsWith('sat')) dayIdx = 6; }
+                let ts = 0; if (rDate) { let dt = new Date(rDate); if (isNaN(dt.getTime())) { let p = rDate.split(/[-/]/); if(p.length === 3) dt = new Date(p[2], p[1]-1, p[0]); } if (!isNaN(dt.getTime())) { ts = dt.getTime(); if (dayIdx === -1) dayIdx = dt.getDay(); } }
+                let res = 'P'; const rRes = rK ? rowD[rK].toLowerCase() : ''; if (rRes.includes('win') || rRes === 'w') res = 'W'; else if (rRes.includes('lose') || rRes.includes('loss') || rRes === 'l') res = 'L'; else { if (profit > 0) res = 'W'; else if (profit < 0) res = 'L'; }
+                let spread = sK ? parseFloat(rowD[sK]) : (sEK ? parseFloat(rowD[sEK]) : null), betT = "Unknown";
+                if (tK !== '_sys_type' && rowD[tK]) betT = rowD[tK].trim();
+                else { if (spread !== null) betT = "SPREAD"; else if (rowD[bK]?.toLowerCase().includes('money line')) betT = "MONEYLINE"; else if (rowD[bK] && (rowD[bK].toLowerCase().includes('over') || rowD[bK].toLowerCase().includes('under'))) betT = "TOTAL"; else if (rowD[bK]?.toLowerCase().includes('parlay')) betT = "PARLAY"; if (tK === '_sys_type') rowD[tK] = betT; }
+                
+                let pos = "Other"; 
+                if (posK !== '_sys_position' && rowD[posK]) {
+                    pos = rowD[posK].trim();
+                } else {
+                    if (betT.toLowerCase().includes('parlay')) pos = 'Parlay'; 
+                    else if (betT.toLowerCase().includes('total')) pos = (rowD[bK]?.toLowerCase().includes('under') || /\bu\s*\d/.test(rowD[bK]?.toLowerCase())) ? 'Under' : 'Over'; 
+                    else if (spread !== null) pos = spread < 0 ? 'Fav' : (spread > 0 ? 'Dog' : "Pick'em");
+                    if (posK === '_sys_position') rowD[posK] = pos;
+                }
+                
+                rowD._stats = { profit, units, result: res, date: rDate, timestamp: ts, dayIndex: dayIdx, bet: rowD[bK] || '', league: rowD[lK] || 'Unknown', spread, type: betT, position: pos };
+                if (bK && !rowD[bK] && profit === 0) continue; allPicksData.push(rowD);
+            }
+        }
+
+        function renderHeaders(target = tableHeaders) {
+            target.innerHTML = ''; const thId = document.createElement('th'); thId.className = "px-6 py-3 border-b border-slate-200 text-left"; thId.innerText = "#"; target.appendChild(thId);
+            dynamicColumns.forEach(col => {
+                const th = document.createElement('th'); th.className = `px-6 py-3 border-b border-slate-200 group relative select-none ${col.align === 'right' ? 'text-right' : 'text-left'}`;
+                const div = document.createElement('div'); div.className = `flex items-center gap-1.5 ${col.align === 'right' ? 'justify-end' : 'justify-start'}`;
+                const btn = document.createElement('button'); btn.className = "text-slate-300 hover:text-blue-600 focus:outline-none transition-all p-0.5 rounded hover:bg-slate-200 filter-btn"; btn.dataset.colKey = col.key; btn.onclick = (e) => openFilterDropdown(e, col.key, col.type); btn.innerHTML = `<svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z" clip-rule="evenodd"></path></svg>`;
+                div.appendChild(Object.assign(document.createElement('span'), { innerText: col.label, className: "group-hover:text-slate-800 transition-colors cursor-pointer" })); div.appendChild(btn); th.appendChild(div); target.appendChild(th);
+            });
+        }
+
+        let currentDropdown = null; let dropdownSelectedIndex = -1;
+        function closeAllDropdowns(e) { if (currentDropdown && (!e || !e.target || !currentDropdown.contains(e.target))) { currentDropdown.remove(); currentDropdown = null; dropdownSelectedIndex = -1; } }
+        function handleGlobalKeydown(e) {
+            if (e.key === 'Escape' && isFullScreenLogOpen && !currentDropdown) { closeFullScreenLog(); return; }
+            if (!currentDropdown) return; if (e.key === 'Escape') { closeFilterDropdown(); return; }
+            const isColSelector = currentDropdown.id === 'columnSelectorDropdown', listC = isColSelector ? currentDropdown.querySelector('.column-list') : currentDropdown.querySelector('.filter-list');
+            const items = Array.from(listC.children).filter(el => el.style.display !== 'none');
+            if (document.activeElement.tagName.toLowerCase() === 'input' && !isColSelector) {
+                if (e.key === 'ArrowDown') { e.preventDefault(); document.activeElement.blur(); dropdownSelectedIndex = 0; updateDropdownSelection(items); }
+                if (e.key === 'Enter') { e.preventDefault(); const applyBtn = currentDropdown.querySelector('button[onclick*="applyFilter"]'); if (applyBtn) applyBtn.click(); }
+                return;
+            }
+            if (e.key === 'ArrowDown') { e.preventDefault(); dropdownSelectedIndex = (dropdownSelectedIndex + 1) % items.length; updateDropdownSelection(items); }
+            else if (e.key === 'ArrowUp') { e.preventDefault(); dropdownSelectedIndex = (dropdownSelectedIndex - 1 + items.length) % items.length; updateDropdownSelection(items); }
+            else if (e.key === 'Enter') { e.preventDefault(); if (dropdownSelectedIndex >= 0 && dropdownSelectedIndex < items.length) { const item = items[dropdownSelectedIndex]; if (isColSelector) item.click(); else { const cb = item.querySelector('input[type="checkbox"]'); if(cb) cb.checked = !cb.checked; } } else if (!isColSelector) { const applyBtn = currentDropdown.querySelector('button[onclick*="applyFilter"]'); if (applyBtn) applyBtn.click(); } }
+        }
+        function updateDropdownSelection(items) { items.forEach((item, idx) => { if (idx === dropdownSelectedIndex) { item.classList.add('keyboard-active'); item.scrollIntoView({ block: 'nearest' }); } else item.classList.remove('keyboard-active'); }); }
+        function handleInputEnter(e) { if (e.key === 'Enter') { e.preventDefault(); const applyBtn = currentDropdown.querySelector('button[onclick*="applyFilter"]'); if (applyBtn) applyBtn.click(); } }
+
+        function isLeagueActiveThisMonth(league) {
+            const m = new Date().getMonth(), l = String(league).toUpperCase().trim();
+            const seasons = { 'NFL': [8, 1], 'NCAAF': [7, 0], 'CFB': [7, 0], 'NBA': [9, 5], 'NCAAB': [10, 3], 'CBB': [10, 3], 'WNBA': [4, 9], 'MLB': [2, 10], 'NHL': [9, 5], 'CFL': [5, 10] };
+            const k = Object.keys(seasons).find(k => l === k || l.includes(k)); if (!k) return true;
+            const [s, e] = seasons[k]; return s <= e ? (m >= s && m <= e) : (m >= s || m <= e);
+        }
+
+        const findExactValueFromDataset = (key, intent, isType = false, isPosition = false) => {
+            if (!key || !intent) return null;
+            const uniqueValues = [...new Set(allPicksData.map(d => String(d[key] || '').trim()))].filter(v => v !== '');
+            let found = uniqueValues.find(v => v.toLowerCase() === intent.toLowerCase());
+            if (found) return found;
+            const li = intent.toLowerCase();
+            if (isType) {
+                if (li === 'moneyline') {
+                    const ml = uniqueValues.find(v => { const lv = v.toLowerCase(); return lv === 'ml' || lv.includes('money line') || lv.includes('moneyline'); });
+                    if (ml) return ml;
+                }
+                if (li === 'total') {
+                    const t = uniqueValues.find(v => { const lv = v.toLowerCase(); return lv === 'o/u' || lv === 'totals' || lv.includes('total') || lv === 'over/under'; });
+                    if (t) return t;
+                }
+                if (li === 'spread') {
+                    const s = uniqueValues.find(v => { const lv = v.toLowerCase(); return lv === 'line' || lv.includes('spread'); });
+                    if (s) return s;
+                }
+            }
+            if (isPosition) {
+                if (li === 'over') {
+                    const o = uniqueValues.find(v => { const lv = v.toLowerCase(); return lv === 'o' || lv === 'over'; });
+                    if (o) return o;
+                }
+                if (li === 'under') {
+                    const u = uniqueValues.find(v => { const lv = v.toLowerCase(); return lv === 'u' || lv === 'under'; });
+                    if (u) return u;
+                }
+            }
+            return uniqueValues.find(v => v.toLowerCase().includes(li) || li.includes(v.toLowerCase()));
+        };
+
+        function getSmartShortcuts() {
+            if (!keyMap.league || !keyMap.position || !keyMap.type) return [];
+            const byL = {};
+            const curMonth = new Date().getMonth();
+            const seasons = { 'NFL': [8, 1], 'NCAAF': [7, 0], 'CFB': [7, 0], 'NBA': [9, 5], 'NCAAB': [10, 3], 'CBB': [10, 3], 'WNBA': [4, 9], 'MLB': [2, 10], 'NHL': [9, 5], 'CFL': [5, 10] };
+
+            const getDuration = (leagueName) => {
+                const l = String(leagueName).toUpperCase().trim();
+                if (l === 'VARIOUS') return -999;
+                const k = Object.keys(seasons).find(key => l === key || l.includes(key));
+                if (!k) return -1;
+                const [s, e] = seasons[k];
+                return (curMonth >= s) ? (curMonth - s + 1) : (12 - s + curMonth + 1);
+            };
+
+            const standardTypes = [
+                { label: "Fav Spread", p: "Fav", t: "SPREAD" },
+                { label: "Dog Spread", p: "Dog", t: "SPREAD" },
+                { label: "Fav ML", p: "Fav", t: "MONEYLINE" },
+                { label: "Dog ML", p: "Dog", t: "MONEYLINE" },
+                { label: "Over", p: "Over", t: "TOTAL" },
+                { label: "Under", p: "Under", t: "TOTAL" },
+                { label: "Parlay", p: "Parlay", t: "PARLAY" }
+            ];
+
+            allPicksData.forEach(r => {
+                const l = r[keyMap.league]; if (!l) return;
+                const lc = l.trim().toUpperCase();
+                if (!byL[lc]) byL[lc] = { league: lc, original: new Set(), total: 0, duration: getDuration(lc) };
+                byL[lc].original.add(l); byL[lc].total++;
+            });
+
+            return Object.values(byL)
+                .filter(lg => lg.total >= 3 && isLeagueActiveThisMonth(lg.league))
+                .sort((a, b) => {
+                    if (a.league === 'VARIOUS') return 1;
+                    if (b.league === 'VARIOUS') return -1;
+                    if (a.duration !== b.duration) return b.duration - a.duration;
+                    return b.total - a.total;
+                })
+                .map(lg => {
+                    const leagueCombos = standardTypes.map(st => {
+                        const lVal = findExactValueFromDataset(keyMap.league, [...lg.original][0]);
+                        const pVal = findExactValueFromDataset(keyMap.position, st.p, false, true);
+                        const tVal = findExactValueFromDataset(keyMap.type, st.t, true);
+                        
+                        const exists = allPicksData.some(row => 
+                            String(row[keyMap.league] || '').trim() === lVal && 
+                            String(row[keyMap.position] || '').trim() === pVal && 
+                            String(row[keyMap.type] || '').trim() === tVal
+                        );
+
+                        return { label: st.label, l: lVal, p: pVal, t: tVal, exists: exists };
+                    });
+                    return { league: lg.league, original: lg.original, combos: leagueCombos };
+                })
+                .slice(0, 4);
+        }
+
+        function applyShortcut(sc) {
+            activeFilters = {}; numericFilters = {};
+            if (sc.l) activeFilters[keyMap.league] = new Set([sc.l]);
+            if (sc.p) activeFilters[keyMap.position] = new Set([sc.p]);
+            if (sc.t) activeFilters[keyMap.type] = new Set([sc.t]);
+            if (currentDropdown) { currentDropdown.remove(); currentDropdown = null; }
+            updateDashboard();
+        }
+
+        function applyLeagueOnlyShortcut(set) { activeFilters = {}; numericFilters = {}; activeFilters[keyMap.league] = new Set(set); if (currentDropdown) { currentDropdown.remove(); currentDropdown = null; } updateDashboard(); }
+
+        function openColumnSelector(e, manualAnchor = null, clickCoords = null) {
+            e.stopPropagation(); if (currentDropdown) currentDropdown.remove(); dropdownSelectedIndex = -1;
+            const btn = manualAnchor || e.currentTarget; const dropdown = document.getElementById('columnSelectorTemplate').cloneNode(true); dropdown.id = 'columnSelectorDropdown'; dropdown.classList.remove('hidden');
+            if (clickCoords) { let lp = clickCoords.x; if (lp + 560 > window.innerWidth) lp = window.innerWidth - 570; dropdown.style.top = (clickCoords.y + 10) + 'px'; dropdown.style.left = lp + 'px'; }
+            else { const r = btn.getBoundingClientRect(); let lp = r.left + window.scrollX; if (lp + 560 > window.innerWidth) lp = window.innerWidth - 570; dropdown.style.top = (r.bottom + window.scrollY + 6) + 'px'; dropdown.style.left = lp + 'px'; }
+            const listC = dropdown.querySelector('.column-list'), shortcuts = getSmartShortcuts();
+            if (shortcuts.length > 0) {
+                const header = document.createElement('div'); header.className = "col-span-2 px-3 py-1.5 bg-blue-50/50 text-[10px] font-bold text-blue-600 uppercase tracking-widest border-b border-slate-100 flex items-center gap-1.5"; header.innerHTML = `<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg> Quick Combine Filters`;
+                listC.appendChild(header);
+                const container = document.createElement('div'); container.className = "col-span-2 border-b border-slate-100 bg-slate-50 flex flex-col";
+                shortcuts.forEach(lg => {
+                    const row = document.createElement('div'); row.className = "flex items-stretch border-b border-slate-100/50 last:border-b-0";
+                    const lb = document.createElement('button'); lb.className = "text-[10px] font-black text-slate-700 uppercase px-3 w-20 shrink-0 border-r border-slate-200/50 bg-slate-100/50 hover:bg-blue-600 hover:text-white transition-colors flex items-center justify-center text-center"; lb.innerText = lg.league; lb.onclick = (ev) => { ev.stopPropagation(); applyLeagueOnlyShortcut(lg.original); };
+                    const sa = document.createElement('div'); sa.className = "flex items-center gap-1.5 overflow-x-auto py-2 px-3 no-scrollbar";
+                    lg.combos.forEach(sc => { 
+                        const b = document.createElement('button'); const baseClasses = "shrink-0 text-[10px] font-bold py-1 px-2 rounded transition-all shadow-sm border";
+                        if (sc.exists) { b.className = `${baseClasses} text-slate-600 bg-white border-slate-200 hover:bg-blue-600 hover:text-white hover:border-blue-600`; b.onclick = (ev) => { ev.stopPropagation(); applyShortcut(sc); }; }
+                        else { b.className = `${baseClasses} text-slate-300 bg-slate-50 border-slate-100 opacity-40 cursor-not-allowed grayscale pointer-events-none`; }
+                        b.innerText = sc.label; sa.appendChild(b); 
+                    });
+                    row.appendChild(lb); row.appendChild(sa); container.appendChild(row);
+                });
+                listC.appendChild(container);
+                const aHeader = document.createElement('div'); aHeader.className = "col-span-2 px-3 py-2 bg-slate-100/50 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-slate-100"; aHeader.innerText = "Single Column Filters"; listC.appendChild(aHeader);
+            }
+            dynamicColumns.forEach(col => {
+                const div = document.createElement('div'); div.className = "px-3 py-2.5 hover:bg-blue-50 cursor-pointer text-slate-600 text-[11px] font-semibold rounded-md transition-colors flex items-center justify-between group border border-transparent hover:border-blue-100";
+                div.innerHTML = `<span class="truncate">${col.label}</span><svg class="w-3 h-3 text-slate-300 group-hover:text-blue-500 opacity-0 group-hover:opacity-100 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>`;
+                div.onclick = (ev) => openFilterDropdown(ev, col.key, col.type, btn); listC.appendChild(div);
+            });
+            document.body.appendChild(dropdown); currentDropdown = dropdown;
+        }
+
+        function openFilterDropdown(e, key, type, anchor = null) {
+            e.stopPropagation(); let r = (anchor || e.currentTarget).getBoundingClientRect();
+            if (currentDropdown) currentDropdown.remove(); dropdownSelectedIndex = -1;
+            const dropdown = document.getElementById('filterDropdownTemplate').cloneNode(true); dropdown.id = 'activeFilterDropdown'; dropdown.classList.remove('hidden'); dropdown.dataset.colKey = key;
+            let lp = r.left + window.scrollX; if (lp + 320 > window.innerWidth) lp = window.innerWidth - 330;
+            dropdown.style.top = (r.bottom + window.scrollY + 6) + 'px'; dropdown.style.left = lp + 'px';
+            const nc = dropdown.querySelector('.numeric-range-container'), dc = dropdown.querySelector('.date-range-container'), ss = dropdown.querySelector('#spreadShortcuts'), sc = dropdown.querySelector('#filterSearchContainer'), lc = dropdown.querySelector('.filter-list');
+            if (type === 'number') { nc.classList.remove('hidden'); if (dynamicColumns.find(c => c.key === key)?.label.toLowerCase().includes('spread')) { ss.classList.remove('hidden'); ss.classList.add('flex'); } if (numericFilters[key]) { dropdown.querySelector('#filterMin').value = numericFilters[key].min ?? ''; dropdown.querySelector('#filterMax').value = numericFilters[key].max ?? ''; } }
+            else if (type === 'date') { dc.classList.remove('hidden'); dc.classList.add('flex'); sc.classList.add('hidden'); dropdown.querySelector('#filterSelectControls').classList.add('hidden'); lc.classList.add('hidden'); if (numericFilters[key]) { dropdown.querySelector('#filterDateMin').value = numericFilters[key].min ? new Date(numericFilters[key].min).toISOString().split('T')[0] : ''; dropdown.querySelector('#filterDateMax').value = numericFilters[key].max ? new Date(numericFilters[key].max).toISOString().split('T')[0] : ''; } }
+            if (type !== 'date') {
+                const unique = [...new Set(allPicksData.map(d => d[key]))].sort(); if (type === 'number') unique.sort((a,b) => parseFloat(a) - parseFloat(b));
+                const checked = activeFilters[key] || new Set(unique);
+                unique.forEach(val => {
+                    if (val === '' || val === undefined) return;
+                    const d = document.createElement('div'); d.className = "flex items-center justify-between group hover:bg-slate-50 px-2 py-1.5 rounded cursor-pointer text-xs";
+                    const l = document.createElement('label'); l.className = "flex items-center gap-2 flex-grow truncate pointer-events-none";
+                    const cb = document.createElement('input'); cb.type = "checkbox"; cb.value = val; cb.className = "rounded text-blue-600 pointer-events-auto"; cb.checked = checked.has(val);
+                    l.appendChild(cb); l.appendChild(Object.assign(document.createElement('span'), { innerText: val, className: "truncate" }));
+                    const ob = document.createElement('button'); ob.innerText = "ONLY"; ob.className = "text-blue-600 hidden group-hover:block ml-2 text-[9px] font-bold";
+                    ob.onclick = (ev) => { ev.stopPropagation(); dropdown.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = false); cb.checked = true; };
+                    d.onclick = (ev) => { if(ev.target !== cb && ev.target !== ob) cb.checked = !cb.checked; }; d.appendChild(l); d.appendChild(ob); lc.appendChild(d);
+                });
+                dropdown.querySelector('.filter-search').oninput = (ev) => { const t = ev.target.value.toLowerCase(); lc.querySelectorAll('div').forEach(d => d.style.display = d.querySelector('span').innerText.toLowerCase().includes(t) ? 'flex' : 'none'); dropdownSelectedIndex = -1; };
+            }
+            document.body.appendChild(dropdown); currentDropdown = dropdown;
+            setTimeout(() => { if (type === 'number') dropdown.querySelector('#filterMin').focus(); else if (type === 'date') dropdown.querySelector('#filterDateMin').focus(); else dropdown.querySelector('.filter-search').focus(); }, 50);
+        }
+
+        function setDateFilterShortcut(type) {
+             const d = document.getElementById('activeFilterDropdown'), min = d.querySelector('#filterDateMin'), max = d.querySelector('#filterDateMax'), today = new Date(); let s, e;
+             if (type === 'thisMonth') { s = new Date(today.getFullYear(), today.getMonth(), 1); e = new Date(today.getFullYear(), today.getMonth() + 1, 0); }
+             else if (type === 'lastMonth') { s = new Date(today.getFullYear(), today.getMonth() - 1, 1); e = new Date(today.getFullYear(), today.getMonth(), 0); }
+             else if (type === 'last30') { e = new Date(); s = new Date(); s.setDate(today.getDate() - 30); }
+             else if (type === 'ytd') { s = new Date(today.getFullYear(), 0, 1); e = new Date(); }
+             if(s && e) { min.value = s.toISOString().split('T')[0]; max.value = e.toISOString().split('T')[0]; applyFilter(min); }
+        }
+        function setSpreadFilter(type) { const d = document.getElementById('activeFilterDropdown'), min = d.querySelector('#filterMin'), max = d.querySelector('#filterMax'); if (type === 'fav') { max.value = -0.5; min.value = ''; } else if (type === 'dog') { min.value = 0.5; max.value = ''; } applyFilter(min); }
+        function toggleFilterSelectAll(btn, sel) { btn.closest('#activeFilterDropdown').querySelectorAll('.filter-list input[type="checkbox"]').forEach(cb => { if (cb.closest('div').style.display !== 'none') cb.checked = sel; }); }
+        function closeFilterDropdown() { if (currentDropdown) { currentDropdown.remove(); currentDropdown = null; dropdownSelectedIndex = -1; } }
+
+        function applyFilter(btn) {
+            const d = btn.closest('#activeFilterDropdown'), key = d.dataset.colKey, type = dynamicColumns.find(c => c.key === key)?.type;
+            if (type === 'date') { const min = d.querySelector('#filterDateMin').value, max = d.querySelector('#filterDateMax').value; if (!min && !max) delete numericFilters[key]; else numericFilters[key] = { min: min ? new Date(min.split('-')[0], min.split('-')[1]-1, min.split('-')[2]).getTime() : null, max: max ? new Date(max.split('-')[0], max.split('-')[1]-1, max.split('-')[2]).setHours(23,59,59,999) : null, type: 'date' }; }
+            else { 
+                const cbs = Array.from(d.querySelectorAll('.filter-list input[type="checkbox"]')); 
+                if (cbs.length > 0) { if (cbs.every(c => c.checked)) delete activeFilters[key]; else activeFilters[key] = new Set(cbs.filter(c => c.checked).map(c => String(c.value).trim())); } 
+                if (type === 'number') { const min = d.querySelector('#filterMin').value, max = d.querySelector('#filterMax').value; if (min === '' && max === '') delete numericFilters[key]; else numericFilters[key] = { min: min === '' ? null : parseFloat(min), max: max === '' ? null : parseFloat(max) }; } 
+            }
+            closeFilterDropdown(); updateDashboard();
+        }
+
+        function clearAllFilters() { activeFilters = {}; numericFilters = {}; updateDashboard(); }
+        function removeFilter(k) { delete activeFilters[k]; delete numericFilters[k]; updateDashboard(); }
+
+        function renderActiveFilters() {
+            const container = document.getElementById('activeFiltersBar'), tags = document.getElementById('filterTags'); tags.innerHTML = '';
+            if (allPicksData.length > 0) container.classList.replace('hidden', 'flex');
+            let has = false, sums = []; activeFilterKeys = [...Object.keys(activeFilters), ...Object.keys(numericFilters)];
+            for (const [k, s] of Object.entries(activeFilters)) { if (s.size === 0) continue; has = true; const l = dynamicColumns.find(c => c.key === k)?.label || k; let text = Array.from(s).join(', '); if (s.size > 2) text = `${Array.from(s).slice(0, 2).join(', ')} +${s.size - 2}`; sums.push(`${l}: ${text}`); createFilterTag(k, l, text, 'text'); }
+            for (const [k, r] of Object.entries(numericFilters)) { has = true; const l = dynamicColumns.find(c => c.key === k)?.label || k; let t = r.type === 'date' ? ((r.min ? `After ${new Date(r.min).toLocaleDateString()}` : '') + (r.min && r.max ? ' - ' : '') + (r.max ? `Before ${new Date(r.max).toLocaleDateString()}` : '')) : (r.min !== null && r.max !== null ? `${r.min} to ${r.max}` : (r.min !== null ? `> ${r.min}` : `< ${r.max}`)); sums.push(`${l}: ${t}`); createFilterTag(k, l, t, 'number'); }
+            document.getElementById('clearAllBtn').classList.toggle('hidden', !has); return sums;
+        }
+
+        function createFilterTag(k, l, v, t) {
+            const div = document.createElement('div'); div.className = "inline-flex items-center bg-white border border-slate-200 rounded px-2 py-1 text-xs shadow-sm ring-1 ring-slate-100 hover:ring-blue-100 transition-all";
+            const ls = document.createElement('span'); ls.className = "cursor-pointer flex items-center"; ls.innerHTML = `<span class="text-slate-400 mr-1.5 uppercase text-[9px] font-bold">${l}</span><span class="mr-2 font-bold">${v}</span>`; ls.onclick = (e) => openFilterDropdown(e, k, t);
+            const cb = document.createElement('button'); cb.className = "text-slate-400 hover:text-rose-500 transition-colors"; cb.innerHTML = '<svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z" clip-rule="evenodd"></path></svg>'; cb.onclick = (e) => { e.stopPropagation(); removeFilter(k); };
+            div.appendChild(ls); div.appendChild(cb); document.getElementById('filterTags').appendChild(div);
+        }
+
+        function animateValue(obj, s, e, d, f = v => v) { let startT = null; const step = (t) => { if (!startT) startT = t; const prog = Math.min((t - startT) / d, 1); obj.innerHTML = f(prog * (e - s) + s); if (prog < 1) window.requestAnimationFrame(step); }; window.requestAnimationFrame(step); }
+        function triggerPulseAnimation(id) { const el = document.getElementById(id); if(el) { el.classList.remove('pulse-update'); void el.offsetWidth; el.classList.add('pulse-update'); } }
+
+        function calculateAndRenderRecentForm(data) {
+            recentFormTableBody.innerHTML = ''; recentFormExpandedBody.innerHTML = ''; if (data.length === 0) return;
+            const rev = [...data].reverse();
+            [{ l: 'Last 5', c: 5, t: recentFormTableBody }, { l: 'Last 10', c: 10, t: recentFormTableBody }, { l: 'Last 25', c: 25, t: recentFormExpandedBody }, { l: 'Last 50', c: 50, t: recentFormExpandedBody }, { l: 'Last 100', c: 100, t: recentFormExpandedBody }].forEach(r => {
+                const s = rev.slice(0, r.c); if (s.length === 0) return;
+                const w = s.filter(d => d._stats.result === 'W').length, l = s.filter(d => d._stats.result === 'L').length, p = s.filter(d => d._stats.result === 'P').length, prof = s.reduce((sum, d) => sum + d._stats.profit, 0), wag = s.reduce((sum, d) => sum + d._stats.units, 0);
+                const wp = (w + l) > 0 ? (w / (w + l) * 100).toFixed(0) : '0', roi = wag > 0 ? (prof / wag * 100).toFixed(1) : '0.0';
+                const tr = document.createElement('tr'); tr.className = "hover:bg-slate-50";
+                const pc = prof > 0 ? "text-emerald-600 font-bold" : (prof < 0 ? "text-rose-600 font-bold" : "text-slate-400");
+                tr.innerHTML = `<td class="px-4 py-2 font-medium text-slate-700">${r.l}</td><td class="px-2 py-2 text-right text-xs"><div class="flex items-center justify-end gap-1.5"><span class="inline-block px-1.5 py-0.5 bg-slate-100 rounded text-slate-900 font-bold font-mono">${w}-${l}${p > 0 ? '-'+p : ''}</span><span class="text-[10px] text-slate-400 font-medium w-7 text-right">${wp}%</span></div></td><td class="px-4 py-2 text-right text-xs tabular-nums"><div class="flex items-baseline justify-end gap-1"><span class="${pc}">${prof > 0 ? '+' : ''}${prof.toFixed(1)}u</span><span class="text-[10px] text-slate-400">(${prof > 0 ? '+' : ''}${roi}%)</span></div></td>`;
+                r.t.appendChild(tr);
+            });
+        }
+
+        function updateDashboard() {
+            const filtered = allPicksData.filter(r => {
+                for (const [k, set] of Object.entries(activeFilters)) if (!set.has(String(r[k] || '').trim())) return false;
+                for (const [k, rg] of Object.entries(numericFilters)) {
+                    if (rg.type === 'date') { const v = r._stats.timestamp; if (!v || (rg.min && v < rg.min) || (rg.max && v > rg.max)) return false; }
+                    else { const v = parseFloat(r[k]); if (isNaN(v) || (rg.min !== null && v < rg.min) || (rg.max !== null && v > rg.max)) return false; }
+                }
+                return true;
+            });
+            cachedFilteredData = filtered;
+            document.querySelectorAll('.filter-btn').forEach(b => { const has = activeFilters[b.dataset.colKey] || numericFilters[b.dataset.colKey]; b.classList.toggle('text-blue-600', !!has); b.classList.toggle('bg-blue-50', !!has); b.classList.toggle('text-slate-300', !has); });
+            const sums = renderActiveFilters(), count = filtered.length;
+            animateValue(countDisplay, previousCount, count, 600, v => Math.floor(v) + " Bets"); previousCount = count;
+            triggerPulseAnimation('summaryCard'); triggerPulseAnimation('streakCard'); triggerPulseAnimation('dayCard'); triggerPulseAnimation('betTypeContainer'); triggerPulseAnimation('recentFormCard');
+            const w = filtered.filter(d => d._stats.result === 'W').length, l = filtered.filter(d => d._stats.result === 'L').length, prof = filtered.reduce((s, d) => s + d._stats.profit, 0), wag = filtered.reduce((s, d) => s + d._stats.units, 0);
+            const roi = wag !== 0 ? (prof / wag * 100) : 0, wr = (w + l) > 0 ? (w / (w + l) * 100) : 0;
+            displayProfit.className = prof > 0 ? "text-3xl lg:text-4xl font-black text-emerald-600 tabular-nums" : (prof < 0 ? "text-3xl lg:text-4xl font-black text-rose-600 tabular-nums" : "text-3xl lg:text-4xl font-black text-slate-700 tabular-nums");
+            document.getElementById('summaryLiveIndicator')?.classList.toggle('hidden', prof <= 0);
+            displayProfit.innerText = (prof > 0 ? '+' : '') + prof.toFixed(2) + 'u'; displayROI.innerText = roi.toFixed(2) + '%';
+            displayROI.className = `text-3xl lg:text-4xl font-black tabular-nums mt-1 ${roi > 0 ? 'text-emerald-600' : (roi < 0 ? 'text-rose-600' : 'text-slate-700')}`;
+            displayWinRate.innerText = wr.toFixed(1) + '%'; displayRecord.innerText = `${w}-${l}`;
+            modalStatsBox.textContent = `${w}-${l} ${sums.length > 0 ? 'Filtered' : 'All Picks'} (${displayProfit.innerText}) (ROI: ${displayROI.innerText})${sums.length > 0 ? '\nFilters: ' + sums.join(' • ') : ''}\n${filtered.map(d => d._stats.result).join(' ')}`;
+            let rt = 0; const cData = filtered.map((d, i) => { rt += d._stats.profit; return { x: i, y: rt, date: d._stats.date, matchup: d._stats.bet }; });
+            renderChart(filtered.map(d => d._stats.date), cData); renderSparkline(cData); renderTable(filtered, tableBody); if (isFullScreenLogOpen) renderTable(filtered, fsTableBody);
+            calculateAndRenderStreaks(filtered); calculateAndRenderDayStats(filtered); calculateAndRenderRecentForm(filtered); renderSmartInsightsCards(filtered); renderBetTypeStats(filtered);
+        }
+
+        function renderBetTypeStats(data) {
+            betTypeStats.innerHTML = ''; const g = {};
+            data.forEach(d => { const t = d._stats.type || "Unknown"; if (!g[t]) g[t] = { w:0, l:0, p:0, prof:0, wag:0, c:0 }; const res = d._stats.result; if(res === 'W') g[t].w++; else if(res === 'L') g[t].l++; else g[t].p++; g[t].prof += d._stats.profit; g[t].wag += d._stats.units; g[t].c++; });
+            const s = Object.entries(g).map(([n, st]) => ({n, ...st})).sort((a,b) => b.c - a.c);
+            if (s.length === 0) { betTypeStats.innerHTML = `<div class="p-4 text-center text-slate-400 text-xs italic">No data</div>`; return; }
+            const table = document.createElement('table'); table.className = "side-table text-xs text-left"; table.innerHTML = `<tbody class="divide-y divide-slate-50 text-slate-600"></tbody>`;
+            const tb = table.querySelector('tbody');
+            s.forEach(item => {
+                 const tr = document.createElement('tr'); tr.className = "hover:bg-slate-50";
+                 const winP = (item.w + item.l) > 0 ? (item.w / (item.w + item.l) * 100).toFixed(0) : '0', roi = item.wag > 0 ? (item.prof / item.wag * 100).toFixed(1) : '0.0';
+                 tr.innerHTML = `<td class="px-4 py-2 font-medium text-slate-700">${item.n}</td><td class="px-2 py-2 text-right text-xs"><div class="flex items-center justify-end gap-1.5"><span class="inline-block px-1.5 py-0.5 bg-slate-100 rounded text-slate-900 font-bold font-mono">${item.w}-${item.l}${item.p > 0 ? '-'+item.p : ''}</span><span class="text-[10px] text-slate-400 font-medium w-7 text-right">${winP}%</span></div></td><td class="px-4 py-2 text-right text-xs tabular-nums"><div class="flex items-baseline justify-end gap-1"><span class="${item.prof > 0 ? "text-emerald-600 font-bold" : (item.prof < 0 ? "text-rose-600 font-bold" : "text-slate-400")}">${item.prof > 0 ? '+' : ''}${item.prof.toFixed(1)}u</span><span class="text-[10px] text-slate-400">(${item.prof > 0 ? '+' : ''}${roi}%)</span></div></td>`;
+                 tb.appendChild(tr);
+            });
+            betTypeStats.appendChild(table);
+        }
+
+        function renderSmartInsightsCards(data) {
+            smartInsightsCards.innerHTML = ''; if (data.length === 0) { smartInsightsCards.innerHTML = `<div class="col-span-full py-4 text-center text-slate-400 text-xs italic">No data.</div>`; return; }
+            const ow = data.filter(d => d._stats.result === 'W').length, ol = data.filter(d => d._stats.result === 'L').length;
+            const now = new Date();
+            const currentDay = now.toLocaleString('en-US', { weekday: 'long' });
+            let cands = [];
+            dynamicColumns.forEach(c => {
+                const lbl = c.label.toLowerCase().trim();
+                
+                if (c.type !== 'text' || lbl.includes('result') || lbl === 'w/l') return;
+                
+                const ignoredExact = ['month', 'game date', 'play', 'wagered units', 'odds', '#', 'no.', 'num'];
+                if (ignoredExact.includes(lbl)) return;
+
+                const isDayCol = lbl.includes('day') || lbl === 'dow';
+                const gs = getStatsByDimension(data, d => d[c.key] || 'Unknown').filter(g => g.count >= 3);
+                gs.forEach(g => { 
+                    if (g.w !== ow || g.l !== ol) {
+                        if (isDayCol && g.label.toLowerCase() !== currentDay.toLowerCase()) return;
+                        cands.push({ ...g, dLabel: c.label }); 
+                    }
+                });
+            });
+            let profs = cands.filter(c => c.units > 0).sort((a,b) => b.units - a.units), fads = cands.filter(c => c.units < 0 && c.winPct < 40).sort((a,b) => a.units - b.units), sel = [], seen = new Set();
+            for (const c of profs) if (sel.length < 3 && !seen.has(c.dLabel)) { c.fade = false; sel.push(c); seen.add(c.dLabel); }
+            if (sel.length < 3) for (const c of profs) if (sel.length < 3 && !sel.includes(c)) { c.fade = false; sel.push(c); }
+            if (sel.length < 3) for (const c of fads) if (sel.length < 3 && !seen.has(c.dLabel)) { c.fade = true; sel.push(c); seen.add(c.dLabel); }
+            if (sel.length < 3) for (const c of fads) if (sel.length < 3 && !sel.includes(c)) { c.fade = true; sel.push(c); }
+            if (sel.length === 0) { smartInsightsCards.innerHTML = `<div class="col-span-full py-4 text-center text-slate-400 text-xs italic">No patterns.</div>`; return; }
+            sel.forEach(item => {
+                const card = document.createElement('div'), bC = item.fade ? 'border-rose-200 bg-rose-50/40' : 'border-emerald-100 bg-emerald-50/40', pC = item.fade ? 'text-rose-600' : 'text-emerald-600', bgC = item.fade ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700';
+                card.className = `rounded-lg p-3 border flex flex-col justify-between hover:shadow-md transition-all group ${bC}`;
+                card.innerHTML = `<div class="flex justify-between items-start mb-2"><div><div class="flex items-center"><div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">${item.dLabel}</div>${item.fade ? '<span class="ml-2 px-1.5 py-0.5 rounded bg-rose-600 text-white text-[9px] font-bold uppercase">Fade</span>' : ''}</div><div class="text-sm font-black text-slate-800 uppercase truncate max-w-[140px]">${item.label}</div></div><div class="text-xl font-bold ${pC} tracking-tight">${item.units > 0 ? '+' : ''}${item.units.toFixed(1)}u</div></div><div class="flex items-center gap-3 text-xs font-medium text-slate-500"><span class="text-slate-900 font-bold">${item.w}-${item.l}</span><span class="${bgC} px-1.5 rounded">${item.winPct.toFixed(0)}% Win</span><span>${item.roi.toFixed(0)}% ROI</span></div>`;
+                smartInsightsCards.appendChild(card);
+            });
+        }
+
+        function renderSparkline(data) {
+            const ctx = document.getElementById('summarySparkline'); if(!ctx || data.length === 0) return;
+            if (summarySparklineInstance) summarySparklineInstance.destroy();
+            const pos = data[data.length - 1].y >= 0, col = pos ? '#10b981' : '#f43f5e';
+            summarySparklineInstance = new Chart(ctx.getContext('2d'), { type: 'line', data: { labels: data.map(d => d.x), datasets: [{ data: data.map(d => d.y), borderColor: col, borderWidth: 2, backgroundColor: (context) => { const grad = context.chart.ctx.createLinearGradient(0, 0, 0, context.chart.height); grad.addColorStop(0, pos ? 'rgba(16, 185, 129, 0.2)' : 'rgba(244, 63, 94, 0.2)'); grad.addColorStop(1, 'rgba(0,0,0,0)'); return grad; }, fill: true, pointRadius: 0, tension: 0.4 }] }, options: { responsive: true, maintainAspectRatio: false, animation: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, scales: { x: { display: false }, y: { display: false } } } });
+        }
+
+        function calculateAndRenderQuickStats(data) {
+            quickStatsGrid.innerHTML = '';
+            const overall = getStatsByDimension(data, () => 'Overall');
+            if (overall.length > 0) { const d = document.createElement('div'); d.className = "hd-table-container bg-white rounded-md overflow-x-auto border-2 border-slate-800 shadow-md col-span-1 lg:col-span-2"; d.innerHTML = buildQuickStatTable('Summary', overall, true); quickStatsGrid.appendChild(d); }
+            [{ l: 'League', g: (r) => r._stats.league }, { l: 'Bet Type', g: (r) => r._stats.type }, { l: 'Position', g: (r) => r._stats.position }, { l: 'Day of Week', g: (r) => ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][r._stats.dayIndex] || 'Unknown' }].forEach(cfg => {
+                const s = getStatsByDimension(data, cfg.g); if (s.length > 0) { const div = document.createElement('div'); div.className = "hd-table-container bg-white rounded-md overflow-x-auto border border-slate-200"; div.innerHTML = buildQuickStatTable(cfg.l, s); quickStatsGrid.appendChild(div); }
+            });
+        }
+        
+        function getStatsByDimension(data, getVal) {
+            const g = {}; data.forEach(r => { const v = getVal(r) || 'Unknown'; if (!g[v]) g[v] = { w:0, l:0, p:0, u:0, wag:0, c:0 }; const res = r._stats.result; if (res === 'W') g[v].w++; else if (res === 'L') g[v].l++; else g[v].p++; g[v].u += r._stats.profit; g[v].wag += r._stats.units; g[v].c++; });
+            return Object.keys(g).map(k => { const st = g[k], d = st.w + st.l; return { label: k, w: st.w, l: st.l, winPct: d > 0 ? (st.w / d * 100) : 0, units: st.u, count: st.c, roi: st.wag > 0 ? (st.u / st.wag * 100) : 0 }; }).sort((a,b) => b.count - a.count);
+        }
+        
+        function buildQuickStatTable(title, rows, isO = false) {
+            const hc = isO ? 'bg-slate-800 text-white' : 'bg-yellow-300 text-slate-900', sc = isO ? 'bg-slate-700 text-white' : 'bg-yellow-100 text-slate-800';
+            let html = `<table class="w-full text-left border-collapse hd-table whitespace-nowrap"><thead><tr><th colspan="6" class="text-center ${hc} border-b-2 border-slate-900 !text-[10px] !py-1 tracking-widest sticky left-0 z-10">${title}</th></tr><tr class="${sc}"><th class="!bg-transparent !border-none px-2 py-1">Metric</th><th class="!bg-transparent !border-none text-center">W</th><th class="!bg-transparent !border-none text-center">L</th><th class="!bg-transparent !border-none text-right">Win%</th><th class="!bg-transparent !border-none text-right">Units</th><th class="!bg-transparent !border-none text-right">ROI</th></tr></thead><tbody>`;
+            rows.forEach(r => {
+                const wpc = r.winPct >= 55 ? 'bg-emerald-100 text-emerald-800' : (r.winPct <= 45 && r.w+r.l > 0 ? 'bg-rose-100 text-rose-800' : 'text-slate-600'), uc = r.units > 0 ? 'text-emerald-700 font-bold' : (r.units < 0 ? 'text-rose-700 font-bold' : 'text-slate-600');
+                html += `<tr><td class="font-bold text-slate-700 truncate max-w-[100px]">${r.label}</td><td class="text-center font-mono text-slate-500">${r.w}</td><td class="text-center font-mono text-slate-500">${r.l}</td><td class="text-right ${wpc} rounded-sm px-1">${r.winPct.toFixed(1)}%</td><td class="text-right ${uc} tabular-nums">${r.units > 0 ? '+' : ''}${r.units.toFixed(2)}</td><td class="text-right tabular-nums text-slate-500">${r.roi.toFixed(1)}%</td></tr>`;
+            });
+            if (rows.length > 1 && !isO) { const tw = rows.reduce((s,r) => s+r.w, 0), tl = rows.reduce((s,r) => s+r.l, 0), tu = rows.reduce((s,r) => s+r.units, 0), td = tw + tl; html += `<tr class="bg-slate-50 border-t-2 border-slate-200"><td class="font-bold text-slate-900 italic">Total</td><td class="text-center font-bold text-slate-700">${tw}</td><td class="text-center font-bold text-slate-700">${tl}</td><td class="text-right font-bold text-slate-700">${td > 0 ? (tw/td*100).toFixed(1) : '0.0'}%</td><td class="text-right font-bold text-slate-700">${tu > 0 ? '+' : ''}${tu.toFixed(2)}</td><td class="text-right"></td></tr>`; }
+            return html + `</tbody></table>`;
+        }
+
+        function calculateAndRenderStreaks(data) {
+            const stats = {}; let curS = 0; const sorted = [...data].sort((a, b) => parseInt(a._internalId) - parseInt(b._internalId));
+            sorted.forEach(p => { const res = p._stats.result; let k = curS > 0 ? `${curS}W` : (curS < 0 ? `${Math.abs(curS)}L` : null); if (k) { if (!stats[k]) stats[k] = { w: 0, l: 0, p: 0, prof: 0, u: 0 }; if (res === 'W') stats[k].w++; else if (res === 'L') stats[k].l++; else stats[k].p++; stats[k].prof += p._stats.profit; stats[k].u += p._stats.units; } if (res === 'W') curS = curS >= 0 ? curS + 1 : 1; else if (res === 'L') curS = curS <= 0 ? curS - 1 : -1; });
+            let activeK = curS > 0 ? `${curS}W` : (curS < 0 ? `${Math.abs(curS)}L` : null); currentStreakBadge.innerText = activeK ? `Current: ${activeK}` : ""; currentStreakBadge.classList.toggle('hidden', !activeK);
+            const rows = Object.keys(stats).map(k => ({ scenario: k, w: stats[k].w, l: stats[k].l, p: stats[k].p, winPct: (stats[k].w + stats[k].l) > 0 ? (stats[k].w / (stats[k].w + stats[k].l) * 100).toFixed(0) : '0', roi: stats[k].u > 0 ? (stats[k].prof / stats[k].u * 100).toFixed(1) : '0.0', units: stats[k].u, profit: stats[k].prof }));
+            const maxP = Math.max(...rows.map(r => r.profit), 0), minP = Math.min(...rows.map(r => r.profit), 0);
+            renderCompactTable(streakTableWins, rows.filter(r => r.scenario.includes('W')).sort((a,b) => parseInt(a.scenario) - parseInt(b.scenario)), maxP, minP, activeK, (r) => selectMomentumRow(r.scenario));
+            renderCompactTable(streakTableLosses, rows.filter(r => r.scenario.includes('L')).sort((a,b) => parseInt(a.scenario) - parseInt(b.scenario)), maxP, minP, activeK, (r) => selectMomentumRow(r.scenario));
+            const activeC = document.getElementById('activeStreakContainer'); activeC.innerHTML = ''; const kShow = selectedMomentumKey || activeK;
+            if (kShow) { const rd = rows.find(r => r.scenario === kShow); if (rd) { const t = document.createElement('table'), tb = document.createElement('tbody'), h = document.createElement('div'); t.className = "side-table text-xs text-left"; h.className = `px-4 py-2 bg-slate-50/30 text-[10px] font-bold ${(kShow === activeK && !selectedMomentumKey) ? (kShow.includes('W') ? "text-emerald-600" : "text-rose-600") : "text-slate-600"} uppercase border-b border-slate-50`; h.innerText = (kShow === activeK && !selectedMomentumKey) ? (kShow.includes('W') ? "Following a Win" : "Following a Loss") : `View: Following ${kShow}`; renderSingleRow(tb, rd, maxP, minP, true); activeC.appendChild(h); t.appendChild(tb); activeC.appendChild(t); } else activeC.innerHTML = `<div class="p-4 text-center text-slate-400 text-[10px] italic">No data for ${kShow}</div>`; } else activeC.innerHTML = `<div class="p-4 text-center text-slate-400 text-[10px] italic">No active streak</div>`;
+        }
+
+        function calculateAndRenderDayStats(data) {
+            const dn = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"], ord = [1, 2, 3, 4, 5, 6, 0], s = {};
+            ord.forEach(d => s[d] = { w: 0, l: 0, p: 0, prof: 0, wag: 0, dayName: dn[d] });
+            data.forEach(d => { if (d._stats.dayIndex !== -1 && s[d._stats.dayIndex]) { const res = d._stats.result; if (res === 'W') s[d._stats.dayIndex].w++; else if (res === 'L') s[d._stats.dayIndex].l++; else s[d._stats.dayIndex].p++; s[d._stats.dayIndex].prof += d._stats.profit; s[d._stats.dayIndex].wag += d._stats.units; } });
+            const ti = new Date().getDay(); todayBadge.innerText = `Today: ${dn[ti].substring(0,3)}`;
+            dayStatsTable.innerHTML = ''; let maxP = Math.max(...ord.map(i => s[i].prof), 0), minP = Math.min(...ord.map(i => s[i].prof), 0);
+            (isDailyCollapsed ? [selectedDayIndex !== null ? selectedDayIndex : ti] : ord).forEach(idx => {
+                const st = s[idx]; if (!isDailyCollapsed && st.w+st.l+st.p === 0 && idx !== ti) return;
+                const tr = document.createElement('tr'); if (!isDailyCollapsed) { tr.onclick = () => selectDayRow(idx); tr.classList.add('cursor-pointer'); }
+                const isP = st.prof > 0, isL = st.prof < 0; let rb = isP ? "bg-emerald-50/40" : (isL ? "bg-rose-50/40" : "hover:bg-slate-50"); if (idx === ti) rb = isP ? "bg-emerald-100/40" : (isL ? "bg-rose-100/40" : "bg-blue-50/50");
+                tr.className = `border-b border-slate-50 transition-colors stats-grid-row ${rb}`;
+                const wp = (st.w + st.l) > 0 ? (st.w / (st.w + st.l) * 100).toFixed(0) : '0', roi = st.wag > 0 ? (st.prof / st.wag * 100).toFixed(1) : '0.0', pb = st.prof > 0 ? (st.prof === maxP && !isDailyCollapsed ? "bg-emerald-100/50 text-emerald-700 px-1.5" : "text-emerald-600 font-bold") : (st.prof < 0 ? (st.prof === minP && !isDailyCollapsed ? "bg-rose-100/50 text-rose-700 px-1.5" : "text-rose-600 font-bold") : "text-slate-400");
+                tr.innerHTML = `<td class="px-4 py-2 font-medium text-slate-700"><div class="flex items-center gap-2">${st.dayName.substring(0, 3)}${idx === ti ? '<span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>' : ''}</div></td><td class="px-2 py-2 text-right text-xs"><div class="flex items-center justify-end gap-1.5"><span class="inline-block px-1.5 py-0.5 bg-slate-100 rounded text-slate-900 font-bold font-mono">${st.w}-${st.l}${st.p > 0 ? '-'+st.p : ''}</span><span class="text-[10px] text-slate-400 font-medium w-7 text-right">${wp}%</span></div></td><td class="px-4 py-2 text-right text-xs tabular-nums"><div class="flex items-baseline justify-end gap-1"><span class="${pb}">${st.prof > 0 ? '+' : ''}${st.prof.toFixed(1)}u</span><span class="text-[10px] text-slate-400">(${st.prof > 0 ? '+' : ''}${roi}%)</span></div></td>`;
+                dayStatsTable.appendChild(tr);
+            });
+            if (dayStatsTable.children.length === 0) dayStatsTable.innerHTML = `<tr><td colspan="3" class="px-4 py-4 text-center text-slate-300 italic text-xs">No data</td></tr>`;
+        }
+
+        function renderSingleRow(tb, r, maxP, minP, act, clickH = null) {
+            const tr = document.createElement('tr'); if (clickH) { tr.onclick = () => clickH(r); tr.classList.add('cursor-pointer'); }
+            const isP = r.profit > 0, isL = r.profit < 0; let rb = act ? (isP ? "bg-emerald-100/40" : (isL ? "bg-rose-100/40" : "bg-blue-50/50")) : (isP ? "bg-emerald-50/40" : (isL ? "bg-rose-50/40" : "hover:bg-slate-50"));
+            tr.className = `border-b border-slate-50 transition-colors stats-grid-row ${rb}`;
+            let pcStyle = isP ? (r.profit === maxP && !act ? "bg-emerald-100/50 text-emerald-700 px-1.5 rounded" : "text-emerald-600 font-bold") : (isL ? (r.profit === minP && !act ? "bg-rose-100/50 text-rose-700 px-1.5 rounded" : "text-rose-600 font-bold") : "text-slate-400");
+            tr.innerHTML = `
+                <td class="px-4 py-2 font-medium text-slate-700 text-[11px]">
+                    <div class="flex items-center gap-2">
+                        ${r.scenario}
+                        ${act ? '<span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>' : ''}
+                    </div>
+                </td>
+                <td class="px-2 py-2 text-right text-xs">
+                    <div class="flex items-center justify-end gap-1.5">
+                        <span class="inline-block px-1.5 py-0.5 bg-slate-100 rounded text-slate-900 font-bold font-mono">
+                            ${r.w}-${r.l}${r.p > 0 ? '-'+r.p : ''}
+                        </span>
+                        <span class="text-[10px] text-slate-400 font-medium w-7 text-right">${r.winPct}%</span>
+                    </div>
+                </td>
+                <td class="px-4 py-2 text-right text-xs tabular-nums">
+                    <div class="flex items-baseline justify-end gap-1">
+                        <span class="${pcStyle}">${r.profit > 0 ? '+' : ''}${r.profit.toFixed(1)}u</span>
+                        <span class="text-[10px] text-slate-400">(${r.profit > 0 ? '+' : ''}${r.roi}%)</span>
+                    </div>
+                </td>`;
+            tb.appendChild(tr);
+        }
+        function renderCompactTable(tb, rs, maxP, minP, ak, clickH) { tb.innerHTML = rs.length === 0 ? `<tr><td colspan="3" class="px-4 py-3 text-center text-slate-300 italic text-[10px]">No Data</td></tr>` : ''; rs.forEach(r => renderSingleRow(tb, r, maxP, minP, r.scenario === ak, clickH)); }
+
+        function renderChart(ls, data) {
+            const ctx = document.getElementById('profitChart').getContext('2d'); if (chartInstance) chartInstance.destroy();
+            const pos = data.length > 0 && data[data.length - 1].y >= 0; let g = ctx.createLinearGradient(0, 0, 0, 300);
+            g.addColorStop(0, pos ? 'rgba(16, 185, 129, 0.2)' : 'rgba(244, 63, 94, 0.2)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+            chartInstance = new Chart(ctx, { type: 'line', data: { labels: ls, datasets: [{ label: 'Profit', data: data.map(d => d.y), borderColor: pos ? '#10b981' : '#f43f5e', backgroundColor: g, fill: true, borderWidth: 2, pointRadius: 0, pointHoverRadius: 4, tension: 0.3 }] }, options: { responsive: true, maintainAspectRatio: false, animation: { duration: 1000, easing: 'easeOutQuart' }, interaction: { intersect: false, mode: 'index' }, plugins: { legend: { display: false }, tooltip: { backgroundColor: 'rgba(15, 23, 42, 0.9)', titleColor: '#f8fafc', bodyColor: '#cbd5e1', borderColor: '#334155', borderWidth: 1, padding: 10, displayColors: false, callbacks: { label: (c) => `Total: ${c.parsed.y.toFixed(2)}u`, title: (c) => `${data[c[0].dataIndex].date}: ${data[c[0].dataIndex].matchup}` } } }, scales: { x: { display: false }, y: { grid: { color: '#f1f5f9', drawBorder: false }, ticks: { callback: v => v + 'u', color: '#94a3b8', font: { size: 10 } }, border: { display: false } } } } });
+        }
+
+        function renderTable(data, target) {
+            target.innerHTML = data.length === 0 ? `<tr><td colspan="100%" class="px-6 py-12 text-center text-slate-400 italic text-sm">No picks.</td></tr>` : '';
+            const frag = document.createDocumentFragment();
+            data.forEach((r, idx) => {
+                const tr = document.createElement('tr'); tr.className = 'border-b border-slate-100 hover:bg-slate-50 animate-entry transition-colors'; if (idx < 20) tr.style.animationDelay = `${idx * 20}ms`;
+                const tid = document.createElement('td'); tid.className = "px-6 py-2.5 text-slate-300 text-[10px] font-mono"; tid.innerText = r._internalId; tr.appendChild(tid);
+                dynamicColumns.forEach(c => {
+                    const td = document.createElement('td'); td.className = `px-6 py-2.5 text-xs ${c.align === 'right' ? 'text-right' : 'text-left'}`;
+                    let v = r[c.key]; if (c.type === 'number') { td.classList.add('font-mono'); if (c.label.toLowerCase().includes('profit')) { const n = parseFloat(v); td.className += n > 0 ? " text-emerald-600 font-bold" : (n < 0 ? " text-rose-600 font-bold" : " text-slate-400"); v = n > 0 ? '+' + n : n; } }
+                    else if (c.label.toLowerCase().includes('result')) { const lv = String(v).toLowerCase(); v = lv.includes('win') || lv === 'w' ? '<span class="px-1.5 py-0.5 bg-emerald-50 text-emerald-700 rounded text-[9px] font-bold border border-emerald-100 uppercase">Win</span>' : (lv.includes('lose') || lv.includes('loss') || lv === 'l' ? '<span class="px-1.5 py-0.5 bg-rose-50 text-rose-700 rounded text-[9px] font-bold border border-rose-100 uppercase">Loss</span>' : `<span class="text-slate-400">${v}</span>`); td.innerHTML = v; tr.appendChild(td); return; }
+                    td.innerHTML = v; tr.appendChild(td);
+                });
+                frag.appendChild(tr);
+            });
+            target.appendChild(frag);
+        }
+
+        function openReportModal() { reportModal.classList.remove('hidden'); requestAnimationFrame(() => { reportModal.classList.remove('opacity-0'); reportModalContent.classList.remove('scale-95', 'opacity-0'); }); }
+        function closeReportModal() { reportModal.classList.add('opacity-0'); reportModalContent.classList.add('scale-95', 'opacity-0'); setTimeout(() => reportModal.classList.add('hidden'), 300); }
+        function copyStats() { navigator.clipboard.writeText(modalStatsBox.textContent).then(() => { const bt = document.getElementById('modalCopyBtnText'), orig = bt.innerText, b = bt.parentElement; bt.innerText = "Copied!"; b.classList.replace('bg-slate-900', 'bg-emerald-600'); setTimeout(() => { bt.innerText = orig; b.classList.replace('bg-emerald-600', 'bg-slate-900'); }, 1500); }); }
+        function openFullScreenLog() { isFullScreenLogOpen = true; fullScreenLogModal.classList.remove('hidden'); renderHeaders(fsTableHeaders); renderTable(cachedFilteredData, fsTableBody); document.body.style.overflow = 'hidden'; }
+        function closeFullScreenLog() { isFullScreenLogOpen = false; fullScreenLogModal.classList.add('hidden'); document.body.style.overflow = ''; }
+    </script>
+</body>
+</html>
