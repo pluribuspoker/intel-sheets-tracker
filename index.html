@@ -149,7 +149,7 @@
             <div>
                 <div class="flex items-baseline gap-2">
                     <h1 class="text-sm font-semibold text-slate-900 leading-none">Intel Analyzer</h1>
-                    <span class="text-[10px] text-slate-400 font-mono cursor-pointer hover:text-blue-500 transition-colors" onclick="openChangelogModal()" title="View Changelog">v2.1.15</span>
+                    <span class="text-[10px] text-slate-400 font-mono cursor-pointer hover:text-blue-500 transition-colors" onclick="openChangelogModal()" title="View Changelog">v2.1.16</span>
                 </div>
                 <p id="fileNameDisplay" class="text-[10px] text-slate-500 font-medium mt-1 hidden"></p>
             </div>
@@ -389,6 +389,16 @@
                 <button onclick="closeChangelogModal()" class="text-slate-400 hover:text-slate-600 transition-colors p-1 rounded-md hover:bg-slate-200"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
             </div>
             <div class="p-5 overflow-y-auto rounded-b-xl space-y-5">
+                <div>
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-xs font-bold text-slate-900 font-mono">v2.1.16</span>
+                        <span class="text-xs text-slate-400">Jun 24, 2026</span>
+                    </div>
+                    <ul class="space-y-1.5 text-sm text-slate-600">
+                        <li class="flex gap-2"><span class="text-blue-500 font-bold shrink-0">~</span>Fixed profit graph Y-axis showing long decimal points (e.g. 3.8000000000000007u) caused by floating point accumulation</li>
+                    </ul>
+                </div>
+                <hr class="border-slate-100">
                 <div>
                     <div class="flex items-center gap-2 mb-2">
                         <span class="text-xs font-bold text-slate-900 font-mono">v2.1.15</span>
@@ -859,7 +869,7 @@
             displayROI.className = `text-3xl lg:text-4xl font-black tabular-nums mt-1 ${roi > 0 ? 'text-emerald-600' : (roi < 0 ? 'text-rose-600' : 'text-slate-700')}`;
             displayWinRate.innerText = wr.toFixed(1) + '%'; displayRecord.innerText = `${w}-${l}`;
             modalStatsBox.textContent = `${w}-${l} ${sums.length > 0 ? 'Filtered' : 'All Picks'} (${displayProfit.innerText}) (ROI: ${displayROI.innerText})${sums.length > 0 ? '\nFilters: ' + sums.join(' • ') : ''}\n${filtered.map(d => d._stats.result).join(' ')}`;
-            let rt = 0; const cData = filtered.map((d, i) => { rt += d._stats.profit; return { x: i, y: rt, date: d._stats.date, matchup: d._stats.bet }; });
+            let rt = 0; const cData = filtered.map((d, i) => { rt = parseFloat((rt + d._stats.profit).toFixed(2)); return { x: i, y: rt, date: d._stats.date, matchup: d._stats.bet }; });
             renderChart(filtered.map(d => d._stats.date), cData); renderSparkline(cData); renderTable(filtered, tableBody); if (isFullScreenLogOpen) renderTable(filtered, fsTableBody);
             calculateAndRenderStreaks(filtered); calculateAndRenderDayStats(filtered); calculateAndRenderRecentForm(filtered); renderSmartInsightsCards(filtered); renderBetTypeStats(filtered);
         }
@@ -1013,7 +1023,7 @@
             const ctx = document.getElementById('profitChart').getContext('2d'); if (chartInstance) chartInstance.destroy();
             const pos = data.length > 0 && data[data.length - 1].y >= 0; let g = ctx.createLinearGradient(0, 0, 0, 300);
             g.addColorStop(0, pos ? 'rgba(16, 185, 129, 0.2)' : 'rgba(244, 63, 94, 0.2)'); g.addColorStop(1, 'rgba(0,0,0,0)');
-            chartInstance = new Chart(ctx, { type: 'line', data: { labels: ls, datasets: [{ label: 'Profit', data: data.map(d => d.y), borderColor: pos ? '#10b981' : '#f43f5e', backgroundColor: g, fill: true, borderWidth: 2, pointRadius: 0, pointHoverRadius: 4, tension: 0.3 }] }, options: { responsive: true, maintainAspectRatio: false, animation: { duration: 1000, easing: 'easeOutQuart' }, interaction: { intersect: false, mode: 'index' }, plugins: { legend: { display: false }, tooltip: { backgroundColor: 'rgba(15, 23, 42, 0.9)', titleColor: '#f8fafc', bodyColor: '#cbd5e1', borderColor: '#334155', borderWidth: 1, padding: 10, displayColors: false, callbacks: { label: (c) => `Total: ${c.parsed.y.toFixed(2)}u`, title: (c) => `${data[c[0].dataIndex].date}: ${data[c[0].dataIndex].matchup}` } } }, scales: { x: { display: false }, y: { grid: { color: '#f1f5f9', drawBorder: false }, ticks: { callback: v => v + 'u', color: '#94a3b8', font: { size: 10 } }, border: { display: false } } } } });
+            chartInstance = new Chart(ctx, { type: 'line', data: { labels: ls, datasets: [{ label: 'Profit', data: data.map(d => d.y), borderColor: pos ? '#10b981' : '#f43f5e', backgroundColor: g, fill: true, borderWidth: 2, pointRadius: 0, pointHoverRadius: 4, tension: 0.3 }] }, options: { responsive: true, maintainAspectRatio: false, animation: { duration: 1000, easing: 'easeOutQuart' }, interaction: { intersect: false, mode: 'index' }, plugins: { legend: { display: false }, tooltip: { backgroundColor: 'rgba(15, 23, 42, 0.9)', titleColor: '#f8fafc', bodyColor: '#cbd5e1', borderColor: '#334155', borderWidth: 1, padding: 10, displayColors: false, callbacks: { label: (c) => `Total: ${c.parsed.y.toFixed(2)}u`, title: (c) => `${data[c[0].dataIndex].date}: ${data[c[0].dataIndex].matchup}` } } }, scales: { x: { display: false }, y: { grid: { color: '#f1f5f9', drawBorder: false }, ticks: { callback: v => parseFloat(v.toFixed(2)) + 'u', color: '#94a3b8', font: { size: 10 } }, border: { display: false } } } } });
         }
 
         function renderTable(data, target) {
