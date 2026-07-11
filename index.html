@@ -13,10 +13,21 @@
         :root {
             --bg-app: #f8fafc;
             --bg-card: #ffffff;
+            --bg-card-alt: #f8fafc;
             --border-subtle: #e2e8f0;
             --text-primary: #0f172a;
             --text-secondary: #64748b;
             --accent-primary: #3b82f6;
+        }
+
+        html.dark {
+            --bg-app: #0f172a;
+            --bg-card: #1e293b;
+            --bg-card-alt: #1a2332;
+            --border-subtle: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --accent-primary: #60a5fa;
         }
 
         body {
@@ -31,11 +42,116 @@
         .font-mono { font-family: 'JetBrains Mono', monospace; }
         .tabular-nums { font-variant-numeric: tabular-nums; }
 
+        /* Dark Mode Overrides */
+        html.dark nav { background-color: #1e293b; border-color: #334155; }
+        html.dark .bg-white { background-color: #1e293b; }
+        html.dark .bg-slate-50,
+        html.dark [class*="bg-slate-50\/"],
+        html.dark [class*="bg-slate-50/"] { background-color: #1a2332; }
+        html.dark .bg-slate-100 { background-color: #1e293b; }
+        html.dark .border-slate-200, html.dark .border-slate-100 { border-color: #334155; }
+        html.dark .border-slate-50 { border-color: #283548; }
+        html.dark .text-slate-900 { color: #f1f5f9; }
+        html.dark .text-slate-800 { color: #e2e8f0; }
+        html.dark .text-slate-700 { color: #cbd5e1; }
+        html.dark .text-slate-600 { color: #94a3b8; }
+        html.dark .text-slate-500 { color: #94a3b8; }
+        html.dark .text-slate-400 { color: #64748b; }
+        html.dark .text-slate-300 { color: #64748b; }
+        html.dark .shadow-sm { box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); }
+        html.dark .hover\:bg-slate-50:hover { background-color: #283548; }
+        html.dark .hover\:bg-slate-100:hover { background-color: #283548; }
+        html.dark .hover\:shadow-md:hover { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4); }
+        html.dark .glass-panel { background: rgba(30, 41, 59, 0.95); border-color: #334155; }
+        html.dark .divide-y > :not([hidden]) ~ :not([hidden]) { border-color: #334155; }
+        html.dark .divide-slate-50 > :not([hidden]) ~ :not([hidden]) { border-color: #283548; }
+        html.dark .divide-slate-200 > :not([hidden]) ~ :not([hidden]) { border-color: #334155; }
+
+        /* Dark Mode - KBD keys */
+        html.dark kbd { background-color: #1e293b; border-color: #475569; color: #64748b; }
+
+        /* Dark Mode - Filter & column selector dropdowns */
+        html.dark .dropdown-menu { background-color: #1e293b; border-color: #334155; }
+        html.dark .dropdown-menu input { background-color: #0f172a; border-color: #475569; color: #f1f5f9; }
+        html.dark .dropdown-menu input::placeholder { color: #64748b; }
+        html.dark .dropdown-menu [class*="bg-slate-100"] { background-color: #283548; }
+        html.dark .dropdown-menu [class*="bg-slate-50"] { background-color: #1a2332; }
+        html.dark .dropdown-menu [class*="bg-blue-50"] { background-color: rgba(59, 130, 246, 0.1); }
+        html.dark .dropdown-menu .hover\:bg-blue-50:hover { background-color: rgba(59, 130, 246, 0.15); }
+        html.dark .dropdown-menu [class*="hover\\:border-blue-100"]:hover { border-color: rgba(59, 130, 246, 0.3); }
+        html.dark .dropdown-menu button.bg-white { background-color: #334155; border-color: #475569; color: #cbd5e1; }
+        html.dark .dropdown-menu button.bg-white:hover { background-color: #3b82f6; color: #ffffff; border-color: #3b82f6; }
+
+        /* Dark Mode - Modals */
+        html.dark #reportModalContent, html.dark #quickStatsModalContent, html.dark #changelogModalContent { background-color: #1e293b; }
+        html.dark #fullScreenLogModal { background-color: #0f172a; }
+        html.dark .stats-box { background-color: #0f172a; border-color: #334155; color: #94a3b8; }
+
+        /* Dark Mode - HD Tables */
+        html.dark .hd-table th { background-color: #ca8a04; color: #fef9c3; border-color: #475569; }
+        html.dark .hd-table td { border-color: #334155; color: #e2e8f0; }
+        html.dark .hd-table tr:hover td { background-color: #283548; }
+        html.dark .hd-table-container { border-color: #475569; }
+
+        /* Dark Mode - Result badges (Win/Loss in wager log) */
+        html.dark .bg-emerald-50 { background-color: rgba(16, 185, 129, 0.15); }
+        html.dark .border-emerald-100 { border-color: rgba(16, 185, 129, 0.3); }
+        html.dark .bg-rose-50 { background-color: rgba(244, 63, 94, 0.15); }
+        html.dark .border-rose-100 { border-color: rgba(244, 63, 94, 0.3); }
+
+        /* Dark Mode - Insight cards */
+        html.dark [class*="bg-emerald-50\/"] { background-color: rgba(16, 185, 129, 0.08); }
+        html.dark [class*="bg-rose-50\/"] { background-color: rgba(244, 63, 94, 0.08); }
+        html.dark .bg-emerald-100 { background-color: rgba(16, 185, 129, 0.2); }
+        html.dark .bg-rose-100 { background-color: rgba(244, 63, 94, 0.2); }
+        html.dark .border-rose-200 { border-color: rgba(244, 63, 94, 0.3); }
+
+        /* Dark Mode - Buttons */
+        html.dark .bg-slate-900 { background-color: #f1f5f9; }
+        html.dark .bg-slate-900.text-white { color: #0f172a; }
+        html.dark button.bg-slate-900 { background-color: #3b82f6; color: #ffffff; }
+        html.dark button.bg-slate-900:hover { background-color: #2563eb; }
+
+        /* Dark Mode - Keyboard active */
+        html.dark .keyboard-active { background-color: #283548 !important; color: #f1f5f9 !important; }
+
+        /* Dark Mode - Filter bar */
+        html.dark #activeFiltersBar:hover { border-color: #475569; background-color: #1a2332; }
+
+        /* Dark Mode - Header IA logo */
+        html.dark nav .bg-slate-900.text-white { background-color: #3b82f6; }
+
+        /* Dark Mode - Result badges */
+        html.dark .bg-emerald-50 { background-color: rgba(16, 185, 129, 0.15); }
+        html.dark .bg-rose-50 { background-color: rgba(244, 63, 94, 0.15); }
+        html.dark .border-emerald-100 { border-color: rgba(16, 185, 129, 0.25); }
+        html.dark .border-rose-200 { border-color: rgba(244, 63, 94, 0.25); }
+
+        /* Dark Mode - Yellow stat badges */
+        html.dark .bg-yellow-50 { background-color: rgba(234, 179, 8, 0.1); }
+        html.dark .border-yellow-200 { border-color: rgba(234, 179, 8, 0.3); }
+
+        /* Dark Mode - Quick stats bg */
+        html.dark #quickStatsModalContent .bg-slate-50 { background-color: #0f172a; }
+
+        /* Dark Mode - Record badges in sidebar */
+        html.dark .bg-slate-100.rounded { background-color: #334155; }
+
+        /* Dark Mode toggle button */
+        .dark-mode-btn .sun-icon { display: block; }
+        .dark-mode-btn .moon-icon { display: none; }
+        html.dark .dark-mode-btn .sun-icon { display: none; }
+        html.dark .dark-mode-btn .moon-icon { display: block; }
+        html.dark .dark-mode-btn { color: #94a3b8; }
+        html.dark .dark-mode-btn:hover { color: #f1f5f9; background-color: #283548; }
+
         /* Scrollbars */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        html.dark ::-webkit-scrollbar-thumb { background: #475569; }
+        html.dark ::-webkit-scrollbar-thumb:hover { background: #64748b; }
 
         /* Animations */
         @keyframes fadeInUp {
@@ -139,6 +255,10 @@
             }
         }
     </script>
+<script>
+        // Prevent FOUC: apply dark mode before paint (only if user explicitly enabled it)
+        (function(){if(localStorage.getItem('intel-dark-mode')==='dark')document.documentElement.classList.add('dark');})();
+    </script>
 </head>
 <body class="min-h-screen pb-12" onclick="closeAllDropdowns(event)" onkeydown="handleGlobalKeydown(event)">
 
@@ -149,7 +269,7 @@
             <div>
                 <div class="flex items-baseline gap-2">
                     <h1 class="text-sm font-semibold text-slate-900 leading-none">Intel Analyzer</h1>
-                    <span class="text-[10px] text-slate-400 font-mono cursor-pointer hover:text-blue-500 transition-colors" onclick="openChangelogModal()" title="View Changelog">v2.1.16</span>
+                    <span class="text-[10px] text-slate-400 font-mono cursor-pointer hover:text-blue-500 transition-colors" onclick="openChangelogModal()" title="View Changelog">v2.2.0</span>
                 </div>
                 <p id="fileNameDisplay" class="text-[10px] text-slate-500 font-medium mt-1 hidden"></p>
             </div>
@@ -158,6 +278,11 @@
         <div class="flex items-center gap-3">
             <button onclick="openReportModal()" class="text-slate-400 hover:text-blue-600 transition-colors p-1.5 rounded-lg hover:bg-slate-50" title="Export Stats">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2-2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+            </button>
+            <div class="h-6 w-px bg-slate-200"></div>
+            <button onclick="toggleDarkMode()" class="dark-mode-btn text-slate-400 hover:text-slate-600 transition-colors p-1.5 rounded-lg hover:bg-slate-50" title="Toggle dark mode" aria-label="Toggle dark mode">
+                <svg class="w-5 h-5 sun-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+                <svg class="w-5 h-5 moon-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
             </button>
             <div class="h-6 w-px bg-slate-200"></div>
             <label class="group relative cursor-pointer flex items-center gap-2 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition-all text-xs font-medium text-slate-600">
@@ -391,6 +516,16 @@
             <div class="p-5 overflow-y-auto rounded-b-xl space-y-5">
                 <div>
                     <div class="flex items-center gap-2 mb-2">
+                        <span class="text-xs font-bold text-slate-900 font-mono">v2.2.0</span>
+                        <span class="text-xs text-slate-400">Jul 11, 2026</span>
+                    </div>
+                    <ul class="space-y-1.5 text-sm text-slate-600">
+                        <li class="flex gap-2"><span class="text-emerald-500 font-bold shrink-0">+</span>Added dark mode — toggle via sun/moon icon in the header, preference persists in localStorage</li>
+                    </ul>
+                </div>
+                <hr class="border-slate-100">
+                <div>
+                    <div class="flex items-center gap-2 mb-2">
                         <span class="text-xs font-bold text-slate-900 font-mono">v2.1.16</span>
                         <span class="text-xs text-slate-400">Jun 24, 2026</span>
                     </div>
@@ -437,6 +572,29 @@
     </div>
 
     <script>
+        // Dark Mode
+        function toggleDarkMode() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('intel-dark-mode', isDark ? 'dark' : 'light');
+            updateChartColors();
+        }
+        function initDarkMode() {
+            if (localStorage.getItem('intel-dark-mode') === 'dark') {
+                document.documentElement.classList.add('dark');
+            }
+        }
+        function updateChartColors() {
+            if (typeof chartInstance !== 'undefined' && chartInstance) {
+                const isDark = document.documentElement.classList.contains('dark');
+                chartInstance.options.scales.y.grid.color = isDark ? '#334155' : '#f1f5f9';
+                chartInstance.options.scales.y.ticks.color = isDark ? '#64748b' : '#94a3b8';
+                chartInstance.options.plugins.tooltip.backgroundColor = isDark ? 'rgba(30, 41, 59, 0.95)' : 'rgba(15, 23, 42, 0.9)';
+                chartInstance.options.plugins.tooltip.borderColor = isDark ? '#475569' : '#334155';
+                chartInstance.update('none');
+            }
+        }
+        initDarkMode();
+
         const fileInput = document.getElementById('csvFile');
         const resultsArea = document.getElementById('resultsArea');
         const modalStatsBox = document.getElementById('modalStatsBox'); 
@@ -980,9 +1138,8 @@
             (isDailyCollapsed ? [selectedDayIndex !== null ? selectedDayIndex : ti] : ord).forEach(idx => {
                 const st = s[idx]; if (!isDailyCollapsed && st.w+st.l+st.p === 0 && idx !== ti) return;
                 const tr = document.createElement('tr'); if (!isDailyCollapsed) { tr.onclick = () => selectDayRow(idx); tr.classList.add('cursor-pointer'); }
-                const isP = st.prof > 0, isL = st.prof < 0; let rb = isP ? "bg-emerald-50/40" : (isL ? "bg-rose-50/40" : "hover:bg-slate-50"); if (idx === ti) rb = isP ? "bg-emerald-100/40" : (isL ? "bg-rose-100/40" : "bg-blue-50/50");
-                tr.className = `border-b border-slate-50 transition-colors stats-grid-row ${rb}`;
-                const wp = (st.w + st.l) > 0 ? (st.w / (st.w + st.l) * 100).toFixed(0) : '0', roi = st.wag > 0 ? (st.prof / st.wag * 100).toFixed(1) : '0.0', pb = st.prof > 0 ? (st.prof === maxP && !isDailyCollapsed ? "bg-emerald-100/50 text-emerald-700 px-1.5" : "text-emerald-600 font-bold") : (st.prof < 0 ? (st.prof === minP && !isDailyCollapsed ? "bg-rose-100/50 text-rose-700 px-1.5" : "text-rose-600 font-bold") : "text-slate-400");
+                tr.className = "hover:bg-slate-50";
+                const wp = (st.w + st.l) > 0 ? (st.w / (st.w + st.l) * 100).toFixed(0) : '0', roi = st.wag > 0 ? (st.prof / st.wag * 100).toFixed(1) : '0.0', pb = st.prof > 0 ? "text-emerald-600 font-bold" : (st.prof < 0 ? "text-rose-600 font-bold" : "text-slate-400");
                 tr.innerHTML = `<td class="px-4 py-2 font-semibold text-slate-700"><div class="flex items-center gap-2">${st.dayName.substring(0, 3)}${idx === ti ? '<span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>' : ''}</div></td><td class="px-2 py-2 text-right text-xs"><div class="flex items-center justify-end gap-1.5"><span class="inline-block px-1.5 py-0.5 bg-slate-100 rounded text-slate-900 font-bold font-mono">${st.w}-${st.l}${st.p > 0 ? '-'+st.p : ''}</span><span class="text-xs text-slate-500 font-semibold w-8 text-right">${wp}%</span></div></td><td class="px-4 py-2 text-right text-xs tabular-nums"><div class="flex items-baseline justify-end gap-1"><span class="${pb}">${st.prof > 0 ? '+' : ''}${st.prof.toFixed(1)}u</span><span class="text-xs text-slate-500 font-medium">(${st.prof > 0 ? '+' : ''}${roi}%)</span></div></td>`;
                 dayStatsTable.appendChild(tr);
             });
@@ -991,9 +1148,9 @@
 
         function renderSingleRow(tb, r, maxP, minP, act, clickH = null) {
             const tr = document.createElement('tr'); if (clickH) { tr.onclick = () => clickH(r); tr.classList.add('cursor-pointer'); }
-            const isP = r.profit > 0, isL = r.profit < 0; let rb = act ? (isP ? "bg-emerald-100/40" : (isL ? "bg-rose-100/40" : "bg-blue-50/50")) : (isP ? "bg-emerald-50/40" : (isL ? "bg-rose-50/40" : "hover:bg-slate-50"));
-            tr.className = `border-b border-slate-50 transition-colors stats-grid-row ${rb}`;
-            let pcStyle = isP ? (r.profit === maxP && !act ? "bg-emerald-100/50 text-emerald-700 px-1.5 rounded" : "text-emerald-600 font-bold") : (isL ? (r.profit === minP && !act ? "bg-rose-100/50 text-rose-700 px-1.5 rounded" : "text-rose-600 font-bold") : "text-slate-400");
+            const isP = r.profit > 0, isL = r.profit < 0;
+            tr.className = "hover:bg-slate-50";
+            let pcStyle = isP ? "text-emerald-600 font-bold" : (isL ? "text-rose-600 font-bold" : "text-slate-400");
             tr.innerHTML = `
                 <td class="px-4 py-2 font-semibold text-slate-700 text-xs">
                     <div class="flex items-center gap-2">
@@ -1021,9 +1178,10 @@
 
         function renderChart(ls, data) {
             const ctx = document.getElementById('profitChart').getContext('2d'); if (chartInstance) chartInstance.destroy();
+            const isDark = document.documentElement.classList.contains('dark');
             const pos = data.length > 0 && data[data.length - 1].y >= 0; let g = ctx.createLinearGradient(0, 0, 0, 300);
             g.addColorStop(0, pos ? 'rgba(16, 185, 129, 0.2)' : 'rgba(244, 63, 94, 0.2)'); g.addColorStop(1, 'rgba(0,0,0,0)');
-            chartInstance = new Chart(ctx, { type: 'line', data: { labels: ls, datasets: [{ label: 'Profit', data: data.map(d => d.y), borderColor: pos ? '#10b981' : '#f43f5e', backgroundColor: g, fill: true, borderWidth: 2, pointRadius: 0, pointHoverRadius: 4, tension: 0.3 }] }, options: { responsive: true, maintainAspectRatio: false, animation: { duration: 1000, easing: 'easeOutQuart' }, interaction: { intersect: false, mode: 'index' }, plugins: { legend: { display: false }, tooltip: { backgroundColor: 'rgba(15, 23, 42, 0.9)', titleColor: '#f8fafc', bodyColor: '#cbd5e1', borderColor: '#334155', borderWidth: 1, padding: 10, displayColors: false, callbacks: { label: (c) => `Total: ${c.parsed.y.toFixed(2)}u`, title: (c) => `${data[c[0].dataIndex].date}: ${data[c[0].dataIndex].matchup}` } } }, scales: { x: { display: false }, y: { grid: { color: '#f1f5f9', drawBorder: false }, ticks: { callback: v => parseFloat(v.toFixed(2)) + 'u', color: '#94a3b8', font: { size: 10 } }, border: { display: false } } } } });
+            chartInstance = new Chart(ctx, { type: 'line', data: { labels: ls, datasets: [{ label: 'Profit', data: data.map(d => d.y), borderColor: pos ? '#10b981' : '#f43f5e', backgroundColor: g, fill: true, borderWidth: 2, pointRadius: 0, pointHoverRadius: 4, tension: 0.3 }] }, options: { responsive: true, maintainAspectRatio: false, animation: { duration: 1000, easing: 'easeOutQuart' }, interaction: { intersect: false, mode: 'index' }, plugins: { legend: { display: false }, tooltip: { backgroundColor: isDark ? 'rgba(30, 41, 59, 0.95)' : 'rgba(15, 23, 42, 0.9)', titleColor: '#f8fafc', bodyColor: '#cbd5e1', borderColor: isDark ? '#475569' : '#334155', borderWidth: 1, padding: 10, displayColors: false, callbacks: { label: (c) => `Total: ${c.parsed.y.toFixed(2)}u`, title: (c) => `${data[c[0].dataIndex].date}: ${data[c[0].dataIndex].matchup}` } } }, scales: { x: { display: false }, y: { grid: { color: isDark ? '#334155' : '#f1f5f9', drawBorder: false }, ticks: { callback: v => parseFloat(v.toFixed(2)) + 'u', color: isDark ? '#64748b' : '#94a3b8', font: { size: 10 } }, border: { display: false } } } } });
         }
 
         function renderTable(data, target) {
