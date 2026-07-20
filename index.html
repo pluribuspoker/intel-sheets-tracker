@@ -243,6 +243,41 @@
         .side-table td:nth-child(1) { width: 35%; }
         .side-table td:nth-child(2) { width: 30%; }
         .side-table td:nth-child(3) { width: 35%; }
+
+        /* Confidence Interval Styles */
+        .ci-bar-track { width: 48px; height: 4px; background: #e2e8f0; border-radius: 2px; position: relative; margin-left: auto; margin-top: 3px; }
+        .ci-bar-fill { position: absolute; top: 0; height: 100%; border-radius: 2px; min-width: 2px; }
+        .ci-bar-fill.ci-pos { background: rgba(34,197,94,.5); }
+        .ci-bar-fill.ci-neg { background: rgba(239,68,68,.5); }
+        .ci-bar-fill.ci-neu { background: rgba(245,158,11,.35); }
+        .ci-bar-ref { position: absolute; top: -1px; width: 1px; height: 6px; background: #94a3b8; }
+        html.dark .ci-bar-track { background: #1e293b; }
+        html.dark .ci-bar-ref { background: #64748b; }
+        .kpi-ci-track { width: 100%; height: 3px; background: #e2e8f0; border-radius: 9px; position: relative; }
+        .kpi-ci-fill { position: absolute; top: 0; height: 100%; border-radius: 9px; min-width: 2px; transition: left .4s ease, width .4s ease; }
+        .kpi-ci-fill.ci-pos { background: rgba(34,197,94,.4); }
+        .kpi-ci-fill.ci-neg { background: rgba(239,68,68,.4); }
+        .kpi-ci-fill.ci-neu { background: rgba(245,158,11,.3); }
+        .kpi-ci-ref { position: absolute; top: -1px; width: 1px; height: 5px; background: #94a3b8; border-radius: 1px; left: 50%; }
+        html.dark .kpi-ci-track { background: #1e293b; }
+        html.dark .kpi-ci-ref { background: #475569; }
+        .ci-tip { position: absolute; background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 8px 12px; font-size: 11px; font-family: 'Inter', system-ui, sans-serif; font-weight: 400; color: #cbd5e1; white-space: pre-line; max-width: 280px; min-width: 200px; line-height: 1.5; pointer-events: none; opacity: 0; visibility: hidden; transition: opacity .15s, visibility .15s; z-index: 50; box-shadow: 0 4px 16px rgba(0,0,0,.4); }
+        .ci-tip.show { opacity: 1; visibility: visible; }
+        [data-ci-tip] { cursor: help; }
+        .sig-pos { color: #059669 !important; }
+        .sig-neg { color: #dc2626 !important; }
+        .sig-neu { color: #d97706 !important; }
+        html.dark .sig-pos { color: #34d399 !important; }
+        html.dark .sig-neg { color: #f87171 !important; }
+        html.dark .sig-neu { color: #fbbf24 !important; }
+        html.ci-on .ci-toggle-btn { color: #3b82f6; }
+        html.ci-on .ci-toggle-btn:hover { color: #2563eb; background-color: #eff6ff; }
+        html.dark.ci-on .ci-toggle-btn { color: #60a5fa; }
+        html.dark.ci-on .ci-toggle-btn:hover { color: #93c5fd; background-color: #283548; }
+        html.dark .ci-toggle-btn { color: #94a3b8; }
+        html.dark .ci-toggle-btn:hover { color: #f1f5f9; background-color: #283548; }
+        html.dark .bg-amber-100 { background-color: rgba(245, 158, 11, 0.15); }
+        @media (max-width: 768px) { .ci-tip { max-width: calc(100vw - 32px) !important; } }
     </style>
     <script>
         tailwind.config = {
@@ -257,7 +292,7 @@
     </script>
 <script>
         // Prevent FOUC: apply dark mode before paint (only if user explicitly enabled it)
-        (function(){if(localStorage.getItem('intel-dark-mode')==='dark')document.documentElement.classList.add('dark');})();
+        (function(){if(localStorage.getItem('intel-dark-mode')==='dark')document.documentElement.classList.add('dark');if(localStorage.getItem('intel-ci-mode')!=='off')document.documentElement.classList.add('ci-on');})();
     </script>
 </head>
 <body class="min-h-screen pb-12" onclick="closeAllDropdowns(event)" onkeydown="handleGlobalKeydown(event)">
@@ -269,7 +304,7 @@
             <div>
                 <div class="flex items-baseline gap-2">
                     <h1 class="text-sm font-semibold text-slate-900 leading-none">Intel Analyzer</h1>
-                    <span class="text-[10px] text-slate-400 font-mono cursor-pointer hover:text-blue-500 transition-colors" onclick="openChangelogModal()" title="View Changelog">v2.2.0</span>
+                    <span class="text-[10px] text-slate-400 font-mono cursor-pointer hover:text-blue-500 transition-colors" onclick="openChangelogModal()" title="View Changelog">v2.3.0</span>
                 </div>
                 <p id="fileNameDisplay" class="text-[10px] text-slate-500 font-medium mt-1 hidden"></p>
             </div>
@@ -283,6 +318,10 @@
             <button onclick="toggleDarkMode()" class="dark-mode-btn text-slate-400 hover:text-slate-600 transition-colors p-1.5 rounded-lg hover:bg-slate-50" title="Toggle dark mode" aria-label="Toggle dark mode">
                 <svg class="w-5 h-5 sun-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
                 <svg class="w-5 h-5 moon-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+            </button>
+            <div class="h-6 w-px bg-slate-200"></div>
+            <button onclick="toggleCI()" id="ciToggleBtn" class="ci-toggle-btn text-slate-400 hover:text-slate-600 transition-colors p-1.5 rounded-lg hover:bg-slate-50" title="Toggle confidence intervals (95% CI)" aria-label="Toggle confidence intervals">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 12h16M8 8v8M16 8v8"/></svg>
             </button>
             <div class="h-6 w-px bg-slate-200"></div>
             <label class="group relative cursor-pointer flex items-center gap-2 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition-all text-xs font-medium text-slate-600">
@@ -319,6 +358,9 @@
                 <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-3 md:p-4 flex flex-col justify-between hover:shadow-md transition-shadow">
                     <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">Win Rate</div>
                     <div id="displayWinRate" class="text-3xl lg:text-4xl font-black text-slate-700 tracking-tight leading-none mt-1 tabular-nums">0.0%</div>
+                    <div id="kpiWrCi" class="mt-1 hidden" data-ci-tip="">
+                        <div class="kpi-ci-track"><div class="kpi-ci-ref"></div><div class="kpi-ci-fill" id="kpiWrCiFill"></div></div>
+                    </div>
                 </div>
                 <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-3 md:p-4 relative overflow-hidden flex flex-col justify-between group hover:shadow-md transition-shadow">
                     <div class="absolute inset-0 top-0 bottom-0 w-full opacity-10 pointer-events-none z-0">
@@ -516,6 +558,19 @@
             <div class="p-5 overflow-y-auto rounded-b-xl space-y-5">
                 <div>
                     <div class="flex items-center gap-2 mb-2">
+                        <span class="text-xs font-bold text-slate-900 font-mono">v2.3.0</span>
+                        <span class="text-xs text-slate-400">Jul 19, 2026</span>
+                    </div>
+                    <ul class="space-y-1.5 text-sm text-slate-600">
+                        <li class="flex gap-2"><span class="text-emerald-500 font-bold shrink-0">+</span>Added 95% confidence intervals — Wilson Score CI for win rate, sample variance CI for ROI, shown across all panels</li>
+                        <li class="flex gap-2"><span class="text-emerald-500 font-bold shrink-0">+</span>CI toggle in header (error-bar icon) — enables/disables CI bars and significance coloring, persists in localStorage</li>
+                        <li class="flex gap-2"><span class="text-emerald-500 font-bold shrink-0">+</span>Significance coloring — green (edge is real), red (consistently losing), amber (inconclusive) replaces simple pos/neg coloring when CI is on</li>
+                        <li class="flex gap-2"><span class="text-emerald-500 font-bold shrink-0">+</span>CI hover tooltips — shows 95% confidence range and interpretation on win% and ROI values</li>
+                    </ul>
+                </div>
+                <hr class="border-slate-100">
+                <div>
+                    <div class="flex items-center gap-2 mb-2">
                         <span class="text-xs font-bold text-slate-900 font-mono">v2.2.0</span>
                         <span class="text-xs text-slate-400">Jul 11, 2026</span>
                     </div>
@@ -594,6 +649,66 @@
             }
         }
         initDarkMode();
+
+        // Confidence Interval System
+        let ciEnabled = localStorage.getItem('intel-ci-mode') !== 'off';
+        function toggleCI() {
+            ciEnabled = !ciEnabled;
+            localStorage.setItem('intel-ci-mode', ciEnabled ? 'on' : 'off');
+            document.documentElement.classList.toggle('ci-on', ciEnabled);
+            if (allPicksData.length > 0) updateDashboard();
+        }
+        if (ciEnabled) document.documentElement.classList.add('ci-on');
+
+        function wilsonCI(wins, n) {
+            if (n === 0) return { lo: 0, hi: 1 };
+            const z = 1.96, p = wins / n;
+            const d = 1 + z * z / n;
+            const c = (p + z * z / (2 * n)) / d;
+            const m = z * Math.sqrt((p * (1 - p) + z * z / (4 * n)) / n) / d;
+            return { lo: Math.max(0, c - m), hi: Math.min(1, c + m) };
+        }
+        function computeRoiCI(profits) {
+            const n = profits.length;
+            if (n < 2) return { lo: 0, hi: 0 };
+            const total = profits.reduce((s, x) => s + x, 0), mean = total / n;
+            const v = profits.reduce((s, x) => s + (x - mean) ** 2, 0) / (n - 1);
+            const se = Math.sqrt(v / n);
+            return { lo: (mean - 1.96 * se) * 100, hi: (mean + 1.96 * se) * 100 };
+        }
+        function sigClass(lo, hi, ref) { return lo > ref ? 'sig-pos' : hi < ref ? 'sig-neg' : 'sig-neu'; }
+        function ciBarClr(lo, hi, ref) { return lo > ref ? 'ci-pos' : hi < ref ? 'ci-neg' : 'ci-neu'; }
+        function ciTipWR(ci, n) {
+            if (n < 2) return 'Not enough data for a range estimate';
+            const lo = (ci.lo * 100).toFixed(0), hi = (ci.hi * 100).toFixed(0);
+            let t = `95% likely between ${lo}%\u2013${hi}% (${n} picks)`;
+            if (ci.lo > 0.5) t += '\nEntire range above 50% \u2014 edge looks real';
+            else if (ci.hi < 0.5) t += '\nEntire range below 50% \u2014 consistently losing';
+            else t += '\nRange crosses 50% \u2014 not yet proven';
+            return t;
+        }
+        function ciTipROI(ci, n) {
+            if (n < 2) return 'Not enough data for a range estimate';
+            const lo = ci.lo.toFixed(1), hi = ci.hi.toFixed(1);
+            let t = `95% likely between ${lo}%\u2013${hi}% (${n} picks)`;
+            if (ci.lo > 0) t += '\nEntire range profitable \u2014 edge looks real';
+            else if (ci.hi < 0) t += '\nEntire range negative \u2014 consistently unprofitable';
+            else t += '\nRange crosses 0% \u2014 not yet proven';
+            return t;
+        }
+        function escCITip(s) { return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/\n/g,'&#10;'); }
+        function wrCIBarHTML(wrCI, decisions) {
+            if (!ciEnabled || decisions < 2) return '';
+            const barL = (wrCI.lo * 100).toFixed(1), barW = ((wrCI.hi - wrCI.lo) * 100).toFixed(1);
+            return `<div class="ci-bar-track mt-0.5"><div class="ci-bar-ref" style="left:50%"></div><div class="ci-bar-fill ${ciBarClr(wrCI.lo, wrCI.hi, 0.5)}" style="left:${barL}%;width:${barW}%"></div></div>`;
+        }
+        function profitColor(profit, roiCI) {
+            if (ciEnabled && roiCI) return `font-bold ${sigClass(roiCI.lo, roiCI.hi, 0)}`;
+            return profit > 0 ? 'text-emerald-600 font-bold' : (profit < 0 ? 'text-rose-600 font-bold' : 'text-slate-400');
+        }
+        function winPctColor(wrCI) { return ciEnabled && wrCI ? sigClass(wrCI.lo, wrCI.hi, 0.5) : 'text-slate-500'; }
+        function wrTipAttr(wrCI, decisions) { return ciEnabled && decisions >= 2 ? ` data-ci-tip="${escCITip(ciTipWR(wrCI, decisions))}"` : ''; }
+        function roiTipAttr(roiCI, count) { return ciEnabled && count >= 2 ? ` data-ci-tip="${escCITip(ciTipROI(roiCI, count))}"` : ''; }
 
         const fileInput = document.getElementById('csvFile');
         const resultsArea = document.getElementById('resultsArea');
@@ -997,10 +1112,10 @@
             [{ l: 'Last 5', c: 5, t: recentFormTableBody }, { l: 'Last 10', c: 10, t: recentFormTableBody }, { l: 'Last 25', c: 25, t: recentFormExpandedBody }, { l: 'Last 50', c: 50, t: recentFormExpandedBody }, { l: 'Last 100', c: 100, t: recentFormExpandedBody }].forEach(r => {
                 const s = rev.slice(0, r.c); if (s.length === 0) return;
                 const w = s.filter(d => d._stats.result === 'W').length, l = s.filter(d => d._stats.result === 'L').length, p = s.filter(d => d._stats.result === 'P').length, prof = s.reduce((sum, d) => sum + d._stats.profit, 0), wag = s.reduce((sum, d) => sum + d._stats.units, 0);
-                const wp = (w + l) > 0 ? (w / (w + l) * 100).toFixed(0) : '0', roi = wag > 0 ? (prof / wag * 100).toFixed(1) : '0.0';
+                const dec = w + l, wp = dec > 0 ? (w / dec * 100).toFixed(0) : '0', roi = wag > 0 ? (prof / wag * 100).toFixed(1) : '0.0';
+                const wrCI = wilsonCI(w, dec), roiCIVal = computeRoiCI(s.map(d => d._stats.profit));
                 const tr = document.createElement('tr'); tr.className = "hover:bg-slate-50";
-                const pc = prof > 0 ? "text-emerald-600 font-bold" : (prof < 0 ? "text-rose-600 font-bold" : "text-slate-400");
-                tr.innerHTML = `<td class="px-4 py-2 font-semibold text-slate-700">${r.l}</td><td class="px-2 py-2 text-right text-xs"><div class="flex items-center justify-end gap-1.5"><span class="inline-block px-1.5 py-0.5 bg-slate-100 rounded text-slate-900 font-bold font-mono">${w}-${l}${p > 0 ? '-'+p : ''}</span><span class="text-xs text-slate-500 font-semibold w-8 text-right">${wp}%</span></div></td><td class="px-4 py-2 text-right text-xs tabular-nums"><div class="flex items-baseline justify-end gap-1"><span class="${pc}">${prof > 0 ? '+' : ''}${prof.toFixed(1)}u</span><span class="text-xs text-slate-500 font-medium">(${prof > 0 ? '+' : ''}${roi}%)</span></div></td>`;
+                tr.innerHTML = `<td class="px-4 py-2 font-semibold text-slate-700">${r.l}</td><td class="px-2 py-2 text-right text-xs"${wrTipAttr(wrCI, dec)}><div class="flex items-center justify-end gap-1.5"><span class="inline-block px-1.5 py-0.5 bg-slate-100 rounded text-slate-900 font-bold font-mono">${w}-${l}${p > 0 ? '-'+p : ''}</span><span class="text-xs ${winPctColor(wrCI)} font-semibold w-8 text-right">${wp}%</span></div>${wrCIBarHTML(wrCI, dec)}</td><td class="px-4 py-2 text-right text-xs tabular-nums"${roiTipAttr(roiCIVal, s.length)}><div class="flex items-baseline justify-end gap-1"><span class="${profitColor(prof, roiCIVal)}">${prof > 0 ? '+' : ''}${prof.toFixed(1)}u</span><span class="text-xs ${ciEnabled ? sigClass(roiCIVal.lo, roiCIVal.hi, 0) : 'text-slate-500'} font-medium">(${prof > 0 ? '+' : ''}${roi}%)</span></div></td>`;
                 r.t.appendChild(tr);
             });
         }
@@ -1024,8 +1139,12 @@
             displayProfit.className = prof > 0 ? "text-3xl lg:text-4xl font-black text-emerald-600 tabular-nums" : (prof < 0 ? "text-3xl lg:text-4xl font-black text-rose-600 tabular-nums" : "text-3xl lg:text-4xl font-black text-slate-700 tabular-nums");
             document.getElementById('summaryLiveIndicator')?.classList.toggle('hidden', prof <= 0);
             displayProfit.innerText = (prof > 0 ? '+' : '') + prof.toFixed(2) + 'u'; displayROI.innerText = roi.toFixed(2) + '%';
-            displayROI.className = `text-3xl lg:text-4xl font-black tabular-nums mt-1 ${roi > 0 ? 'text-emerald-600' : (roi < 0 ? 'text-rose-600' : 'text-slate-700')}`;
+            const decisions = w + l, kpiWrCI = wilsonCI(w, decisions), kpiRoiCI = computeRoiCI(filtered.map(d => d._stats.profit));
+            displayROI.className = `text-3xl lg:text-4xl font-black tabular-nums mt-1 ${ciEnabled ? sigClass(kpiRoiCI.lo, kpiRoiCI.hi, 0) : (roi > 0 ? 'text-emerald-600' : (roi < 0 ? 'text-rose-600' : 'text-slate-700'))}`;
             displayWinRate.innerText = wr.toFixed(1) + '%'; displayRecord.innerText = `${w}-${l}`;
+            displayWinRate.className = `text-3xl lg:text-4xl font-black tracking-tight leading-none mt-1 tabular-nums ${ciEnabled ? sigClass(kpiWrCI.lo, kpiWrCI.hi, 0.5) : 'text-slate-700'}`;
+            const ciWrap = document.getElementById('kpiWrCi');
+            if (ciEnabled && decisions >= 2) { const fill = document.getElementById('kpiWrCiFill'); fill.className = `kpi-ci-fill ${ciBarClr(kpiWrCI.lo, kpiWrCI.hi, 0.5)}`; fill.style.left = (kpiWrCI.lo * 100).toFixed(1) + '%'; fill.style.width = ((kpiWrCI.hi - kpiWrCI.lo) * 100).toFixed(1) + '%'; ciWrap.dataset.ciTip = ciTipWR(kpiWrCI, decisions); ciWrap.classList.remove('hidden'); } else { ciWrap.classList.add('hidden'); }
             modalStatsBox.textContent = `${w}-${l} ${sums.length > 0 ? 'Filtered' : 'All Picks'} (${displayProfit.innerText}) (ROI: ${displayROI.innerText})${sums.length > 0 ? '\nFilters: ' + sums.join(' • ') : ''}\n${filtered.map(d => d._stats.result).join(' ')}`;
             let rt = 0; const cData = filtered.map((d, i) => { rt = parseFloat((rt + d._stats.profit).toFixed(2)); return { x: i, y: rt, date: d._stats.date, matchup: d._stats.bet }; });
             renderChart(filtered.map(d => d._stats.date), cData); renderSparkline(cData); renderTable(filtered, tableBody); if (isFullScreenLogOpen) renderTable(filtered, fsTableBody);
@@ -1034,15 +1153,16 @@
 
         function renderBetTypeStats(data) {
             betTypeStats.innerHTML = ''; const g = {};
-            data.forEach(d => { const t = d._stats.type || "Unknown"; if (!g[t]) g[t] = { w:0, l:0, p:0, prof:0, wag:0, c:0 }; const res = d._stats.result; if(res === 'W') g[t].w++; else if(res === 'L') g[t].l++; else g[t].p++; g[t].prof += d._stats.profit; g[t].wag += d._stats.units; g[t].c++; });
+            data.forEach(d => { const t = d._stats.type || "Unknown"; if (!g[t]) g[t] = { w:0, l:0, p:0, prof:0, wag:0, c:0, profits:[] }; const res = d._stats.result; if(res === 'W') g[t].w++; else if(res === 'L') g[t].l++; else g[t].p++; g[t].prof += d._stats.profit; g[t].wag += d._stats.units; g[t].c++; g[t].profits.push(d._stats.profit); });
             const s = Object.entries(g).map(([n, st]) => ({n, ...st})).sort((a,b) => b.c - a.c);
             if (s.length === 0) { betTypeStats.innerHTML = `<div class="p-4 text-center text-slate-400 text-xs italic">No data</div>`; return; }
             const table = document.createElement('table'); table.className = "side-table text-xs text-left"; table.innerHTML = `<tbody class="divide-y divide-slate-50 text-slate-600"></tbody>`;
             const tb = table.querySelector('tbody');
             s.forEach(item => {
                  const tr = document.createElement('tr'); tr.className = "hover:bg-slate-50";
-                 const winP = (item.w + item.l) > 0 ? (item.w / (item.w + item.l) * 100).toFixed(0) : '0', roi = item.wag > 0 ? (item.prof / item.wag * 100).toFixed(1) : '0.0';
-                 tr.innerHTML = `<td class="px-4 py-2 font-semibold text-slate-700">${item.n}</td><td class="px-2 py-2 text-right text-xs"><div class="flex items-center justify-end gap-1.5"><span class="inline-block px-1.5 py-0.5 bg-slate-100 rounded text-slate-900 font-bold font-mono">${item.w}-${item.l}${item.p > 0 ? '-'+item.p : ''}</span><span class="text-xs text-slate-500 font-semibold w-8 text-right">${winP}%</span></div></td><td class="px-4 py-2 text-right text-xs tabular-nums"><div class="flex items-baseline justify-end gap-1"><span class="${item.prof > 0 ? "text-emerald-600 font-bold" : (item.prof < 0 ? "text-rose-600 font-bold" : "text-slate-400")}">${item.prof > 0 ? '+' : ''}${item.prof.toFixed(1)}u</span><span class="text-xs text-slate-500 font-medium">(${item.prof > 0 ? '+' : ''}${roi}%)</span></div></td>`;
+                 const dec = item.w + item.l, winP = dec > 0 ? (item.w / dec * 100).toFixed(0) : '0', roi = item.wag > 0 ? (item.prof / item.wag * 100).toFixed(1) : '0.0';
+                 const wrCI = wilsonCI(item.w, dec), roiCIVal = computeRoiCI(item.profits);
+                 tr.innerHTML = `<td class="px-4 py-2 font-semibold text-slate-700">${item.n}</td><td class="px-2 py-2 text-right text-xs"${wrTipAttr(wrCI, dec)}><div class="flex items-center justify-end gap-1.5"><span class="inline-block px-1.5 py-0.5 bg-slate-100 rounded text-slate-900 font-bold font-mono">${item.w}-${item.l}${item.p > 0 ? '-'+item.p : ''}</span><span class="text-xs ${winPctColor(wrCI)} font-semibold w-8 text-right">${winP}%</span></div>${wrCIBarHTML(wrCI, dec)}</td><td class="px-4 py-2 text-right text-xs tabular-nums"${roiTipAttr(roiCIVal, item.c)}><div class="flex items-baseline justify-end gap-1"><span class="${profitColor(item.prof, roiCIVal)}">${item.prof > 0 ? '+' : ''}${item.prof.toFixed(1)}u</span><span class="text-xs ${ciEnabled ? sigClass(roiCIVal.lo, roiCIVal.hi, 0) : 'text-slate-500'} font-medium">(${item.prof > 0 ? '+' : ''}${roi}%)</span></div></td>`;
                  tb.appendChild(tr);
             });
             betTypeStats.appendChild(table);
@@ -1078,9 +1198,13 @@
             if (sel.length < 3) for (const c of fads) if (sel.length < 3 && !sel.includes(c)) { c.fade = true; sel.push(c); }
             if (sel.length === 0) { smartInsightsCards.innerHTML = `<div class="col-span-full py-4 text-center text-slate-400 text-xs italic">No patterns.</div>`; return; }
             sel.forEach(item => {
-                const card = document.createElement('div'), bC = item.fade ? 'border-rose-200 bg-rose-50/40' : 'border-emerald-100 bg-emerald-50/40', pC = item.fade ? 'text-rose-600' : 'text-emerald-600', bgC = item.fade ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700';
+                const card = document.createElement('div'), bC = item.fade ? 'border-rose-200 bg-rose-50/40' : 'border-emerald-100 bg-emerald-50/40';
+                const wrSig = ciEnabled && item.wrCI ? sigClass(item.wrCI.lo, item.wrCI.hi, 0.5) : null;
+                const pC = ciEnabled && item.roiCI ? sigClass(item.roiCI.lo, item.roiCI.hi, 0) : (item.fade ? 'text-rose-600' : 'text-emerald-600');
+                const bgC = wrSig === 'sig-pos' ? 'bg-emerald-100 text-emerald-700' : wrSig === 'sig-neg' ? 'bg-rose-100 text-rose-700' : wrSig === 'sig-neu' ? 'bg-amber-100 text-amber-700' : (item.fade ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700');
+                const roiC = ciEnabled && item.roiCI ? sigClass(item.roiCI.lo, item.roiCI.hi, 0) : '';
                 card.className = `rounded-lg p-3 border flex flex-col justify-between hover:shadow-md transition-all group ${bC}`;
-                card.innerHTML = `<div class="flex justify-between items-start mb-2"><div><div class="flex items-center"><div class="text-xs font-bold text-slate-500 uppercase tracking-wider">${item.dLabel}</div>${item.fade ? '<span class="ml-2 px-1.5 py-0.5 rounded bg-rose-600 text-white text-[9px] font-bold uppercase">Fade</span>' : ''}</div><div class="text-sm font-black text-slate-800 uppercase truncate max-w-[140px]">${item.label}</div></div><div class="text-xl font-bold ${pC} tracking-tight">${item.units > 0 ? '+' : ''}${item.units.toFixed(1)}u</div></div><div class="flex items-center gap-3 text-xs font-medium text-slate-500"><span class="text-slate-900 font-bold">${item.w}-${item.l}</span><span class="${bgC} px-1.5 rounded">${item.winPct.toFixed(0)}% Win</span><span>${item.roi.toFixed(0)}% ROI</span></div>`;
+                card.innerHTML = `<div class="flex justify-between items-start mb-2"><div><div class="flex items-center"><div class="text-xs font-bold text-slate-500 uppercase tracking-wider">${item.dLabel}</div>${item.fade ? '<span class="ml-2 px-1.5 py-0.5 rounded bg-rose-600 text-white text-[9px] font-bold uppercase">Fade</span>' : ''}</div><div class="text-sm font-black text-slate-800 uppercase truncate max-w-[140px]">${item.label}</div></div><div class="text-xl font-bold ${pC} tracking-tight">${item.units > 0 ? '+' : ''}${item.units.toFixed(1)}u</div></div><div class="flex items-center gap-3 text-xs font-medium text-slate-500"><span class="text-slate-900 font-bold">${item.w}-${item.l}</span><span class="${bgC} px-1.5 rounded">${item.winPct.toFixed(0)}% Win</span><span class="${roiC}">${item.roi.toFixed(0)}% ROI</span></div>`;
                 smartInsightsCards.appendChild(card);
             });
         }
@@ -1102,16 +1226,18 @@
         }
         
         function getStatsByDimension(data, getVal) {
-            const g = {}; data.forEach(r => { const v = getVal(r) || 'Unknown'; if (!g[v]) g[v] = { w:0, l:0, p:0, u:0, wag:0, c:0 }; const res = r._stats.result; if (res === 'W') g[v].w++; else if (res === 'L') g[v].l++; else g[v].p++; g[v].u += r._stats.profit; g[v].wag += r._stats.units; g[v].c++; });
-            return Object.keys(g).map(k => { const st = g[k], d = st.w + st.l; return { label: k, w: st.w, l: st.l, winPct: d > 0 ? (st.w / d * 100) : 0, units: st.u, count: st.c, roi: st.wag > 0 ? (st.u / st.wag * 100) : 0 }; }).sort((a,b) => b.count - a.count);
+            const g = {}; data.forEach(r => { const v = getVal(r) || 'Unknown'; if (!g[v]) g[v] = { w:0, l:0, p:0, u:0, wag:0, c:0, profits:[] }; const res = r._stats.result; if (res === 'W') g[v].w++; else if (res === 'L') g[v].l++; else g[v].p++; g[v].u += r._stats.profit; g[v].wag += r._stats.units; g[v].c++; g[v].profits.push(r._stats.profit); });
+            return Object.keys(g).map(k => { const st = g[k], d = st.w + st.l; return { label: k, w: st.w, l: st.l, decisions: d, winPct: d > 0 ? (st.w / d * 100) : 0, units: st.u, count: st.c, roi: st.wag > 0 ? (st.u / st.wag * 100) : 0, wrCI: wilsonCI(st.w, d), roiCI: computeRoiCI(st.profits) }; }).sort((a,b) => b.count - a.count);
         }
         
         function buildQuickStatTable(title, rows, isO = false) {
             const hc = isO ? 'bg-slate-800 text-white' : 'bg-yellow-300 text-slate-900', sc = isO ? 'bg-slate-700 text-white' : 'bg-yellow-100 text-slate-800';
             let html = `<table class="w-full text-left border-collapse hd-table whitespace-nowrap"><thead><tr><th colspan="6" class="text-center ${hc} border-b-2 border-slate-900 !text-[10px] !py-1 tracking-widest sticky left-0 z-10">${title}</th></tr><tr class="${sc}"><th class="!bg-transparent !border-none px-2 py-1">Metric</th><th class="!bg-transparent !border-none text-center">W</th><th class="!bg-transparent !border-none text-center">L</th><th class="!bg-transparent !border-none text-right">Win%</th><th class="!bg-transparent !border-none text-right">Units</th><th class="!bg-transparent !border-none text-right">ROI</th></tr></thead><tbody>`;
             rows.forEach(r => {
-                const wpc = r.winPct >= 55 ? 'bg-emerald-100 text-emerald-800' : (r.winPct <= 45 && r.w+r.l > 0 ? 'bg-rose-100 text-rose-800' : 'text-slate-600'), uc = r.units > 0 ? 'text-emerald-700 font-bold' : (r.units < 0 ? 'text-rose-700 font-bold' : 'text-slate-600');
-                html += `<tr><td class="font-bold text-slate-700 truncate max-w-[100px]">${r.label}</td><td class="text-center font-mono text-slate-500">${r.w}</td><td class="text-center font-mono text-slate-500">${r.l}</td><td class="text-right ${wpc} rounded-sm px-1">${r.winPct.toFixed(1)}%</td><td class="text-right ${uc} tabular-nums">${r.units > 0 ? '+' : ''}${r.units.toFixed(2)}</td><td class="text-right tabular-nums text-slate-500">${r.roi.toFixed(1)}%</td></tr>`;
+                const wpc = ciEnabled && r.wrCI ? sigClass(r.wrCI.lo, r.wrCI.hi, 0.5) : (r.winPct >= 55 ? 'bg-emerald-100 text-emerald-800' : (r.winPct <= 45 && r.w+r.l > 0 ? 'bg-rose-100 text-rose-800' : 'text-slate-600'));
+                const uc = ciEnabled && r.roiCI ? profitColor(r.units, r.roiCI) : (r.units > 0 ? 'text-emerald-700 font-bold' : (r.units < 0 ? 'text-rose-700 font-bold' : 'text-slate-600'));
+                const roiClr = ciEnabled && r.roiCI ? sigClass(r.roiCI.lo, r.roiCI.hi, 0) : 'text-slate-500';
+                html += `<tr><td class="font-bold text-slate-700 truncate max-w-[100px]">${r.label}</td><td class="text-center font-mono text-slate-500">${r.w}</td><td class="text-center font-mono text-slate-500">${r.l}</td><td class="text-right ${wpc} rounded-sm px-1"${r.wrCI ? wrTipAttr(r.wrCI, r.decisions) : ''}>${r.winPct.toFixed(1)}%${r.wrCI ? wrCIBarHTML(r.wrCI, r.decisions) : ''}</td><td class="text-right ${uc} tabular-nums">${r.units > 0 ? '+' : ''}${r.units.toFixed(2)}</td><td class="text-right tabular-nums ${roiClr}"${r.roiCI ? roiTipAttr(r.roiCI, r.count) : ''}>${r.roi.toFixed(1)}%</td></tr>`;
             });
             if (rows.length > 1 && !isO) { const tw = rows.reduce((s,r) => s+r.w, 0), tl = rows.reduce((s,r) => s+r.l, 0), tu = rows.reduce((s,r) => s+r.units, 0), td = tw + tl; html += `<tr class="bg-slate-50 border-t-2 border-slate-200"><td class="font-bold text-slate-900 italic">Total</td><td class="text-center font-bold text-slate-700">${tw}</td><td class="text-center font-bold text-slate-700">${tl}</td><td class="text-right font-bold text-slate-700">${td > 0 ? (tw/td*100).toFixed(1) : '0.0'}%</td><td class="text-right font-bold text-slate-700">${tu > 0 ? '+' : ''}${tu.toFixed(2)}</td><td class="text-right"></td></tr>`; }
             return html + `</tbody></table>`;
@@ -1119,9 +1245,9 @@
 
         function calculateAndRenderStreaks(data) {
             const stats = {}; let curS = 0; const sorted = [...data].sort((a, b) => parseInt(a._internalId) - parseInt(b._internalId));
-            sorted.forEach(p => { const res = p._stats.result; let k = curS > 0 ? `${curS}W` : (curS < 0 ? `${Math.abs(curS)}L` : null); if (k) { if (!stats[k]) stats[k] = { w: 0, l: 0, p: 0, prof: 0, u: 0 }; if (res === 'W') stats[k].w++; else if (res === 'L') stats[k].l++; else stats[k].p++; stats[k].prof += p._stats.profit; stats[k].u += p._stats.units; } if (res === 'W') curS = curS >= 0 ? curS + 1 : 1; else if (res === 'L') curS = curS <= 0 ? curS - 1 : -1; });
+            sorted.forEach(p => { const res = p._stats.result; let k = curS > 0 ? `${curS}W` : (curS < 0 ? `${Math.abs(curS)}L` : null); if (k) { if (!stats[k]) stats[k] = { w: 0, l: 0, p: 0, prof: 0, u: 0, profits: [] }; if (res === 'W') stats[k].w++; else if (res === 'L') stats[k].l++; else stats[k].p++; stats[k].prof += p._stats.profit; stats[k].u += p._stats.units; stats[k].profits.push(p._stats.profit); } if (res === 'W') curS = curS >= 0 ? curS + 1 : 1; else if (res === 'L') curS = curS <= 0 ? curS - 1 : -1; });
             let activeK = curS > 0 ? `${curS}W` : (curS < 0 ? `${Math.abs(curS)}L` : null); currentStreakBadge.innerText = activeK ? `Current: ${activeK}` : ""; currentStreakBadge.classList.toggle('hidden', !activeK);
-            const rows = Object.keys(stats).map(k => ({ scenario: k, w: stats[k].w, l: stats[k].l, p: stats[k].p, winPct: (stats[k].w + stats[k].l) > 0 ? (stats[k].w / (stats[k].w + stats[k].l) * 100).toFixed(0) : '0', roi: stats[k].u > 0 ? (stats[k].prof / stats[k].u * 100).toFixed(1) : '0.0', units: stats[k].u, profit: stats[k].prof }));
+            const rows = Object.keys(stats).map(k => { const d = stats[k].w + stats[k].l; return { scenario: k, w: stats[k].w, l: stats[k].l, p: stats[k].p, decisions: d, winPct: d > 0 ? (stats[k].w / d * 100).toFixed(0) : '0', roi: stats[k].u > 0 ? (stats[k].prof / stats[k].u * 100).toFixed(1) : '0.0', units: stats[k].u, profit: stats[k].prof, wrCI: wilsonCI(stats[k].w, d), roiCI: computeRoiCI(stats[k].profits) }; });
             const maxP = Math.max(...rows.map(r => r.profit), 0), minP = Math.min(...rows.map(r => r.profit), 0);
             renderCompactTable(streakTableWins, rows.filter(r => r.scenario.includes('W')).sort((a,b) => parseInt(a.scenario) - parseInt(b.scenario)), maxP, minP, activeK, (r) => selectMomentumRow(r.scenario));
             renderCompactTable(streakTableLosses, rows.filter(r => r.scenario.includes('L')).sort((a,b) => parseInt(a.scenario) - parseInt(b.scenario)), maxP, minP, activeK, (r) => selectMomentumRow(r.scenario));
@@ -1131,16 +1257,17 @@
 
         function calculateAndRenderDayStats(data) {
             const dn = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"], ord = [1, 2, 3, 4, 5, 6, 0], s = {};
-            ord.forEach(d => s[d] = { w: 0, l: 0, p: 0, prof: 0, wag: 0, dayName: dn[d] });
-            data.forEach(d => { if (d._stats.dayIndex !== -1 && s[d._stats.dayIndex]) { const res = d._stats.result; if (res === 'W') s[d._stats.dayIndex].w++; else if (res === 'L') s[d._stats.dayIndex].l++; else s[d._stats.dayIndex].p++; s[d._stats.dayIndex].prof += d._stats.profit; s[d._stats.dayIndex].wag += d._stats.units; } });
+            ord.forEach(d => s[d] = { w: 0, l: 0, p: 0, prof: 0, wag: 0, dayName: dn[d], profits: [] });
+            data.forEach(d => { if (d._stats.dayIndex !== -1 && s[d._stats.dayIndex]) { const res = d._stats.result; if (res === 'W') s[d._stats.dayIndex].w++; else if (res === 'L') s[d._stats.dayIndex].l++; else s[d._stats.dayIndex].p++; s[d._stats.dayIndex].prof += d._stats.profit; s[d._stats.dayIndex].wag += d._stats.units; s[d._stats.dayIndex].profits.push(d._stats.profit); } });
             const ti = new Date().getDay(); todayBadge.innerText = `Today: ${dn[ti].substring(0,3)}`;
             dayStatsTable.innerHTML = ''; let maxP = Math.max(...ord.map(i => s[i].prof), 0), minP = Math.min(...ord.map(i => s[i].prof), 0);
             (isDailyCollapsed ? [selectedDayIndex !== null ? selectedDayIndex : ti] : ord).forEach(idx => {
                 const st = s[idx]; if (!isDailyCollapsed && st.w+st.l+st.p === 0 && idx !== ti) return;
                 const tr = document.createElement('tr'); if (!isDailyCollapsed) { tr.onclick = () => selectDayRow(idx); tr.classList.add('cursor-pointer'); }
                 tr.className = "hover:bg-slate-50";
-                const wp = (st.w + st.l) > 0 ? (st.w / (st.w + st.l) * 100).toFixed(0) : '0', roi = st.wag > 0 ? (st.prof / st.wag * 100).toFixed(1) : '0.0', pb = st.prof > 0 ? "text-emerald-600 font-bold" : (st.prof < 0 ? "text-rose-600 font-bold" : "text-slate-400");
-                tr.innerHTML = `<td class="px-4 py-2 font-semibold text-slate-700"><div class="flex items-center gap-2">${st.dayName.substring(0, 3)}${idx === ti ? '<span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>' : ''}</div></td><td class="px-2 py-2 text-right text-xs"><div class="flex items-center justify-end gap-1.5"><span class="inline-block px-1.5 py-0.5 bg-slate-100 rounded text-slate-900 font-bold font-mono">${st.w}-${st.l}${st.p > 0 ? '-'+st.p : ''}</span><span class="text-xs text-slate-500 font-semibold w-8 text-right">${wp}%</span></div></td><td class="px-4 py-2 text-right text-xs tabular-nums"><div class="flex items-baseline justify-end gap-1"><span class="${pb}">${st.prof > 0 ? '+' : ''}${st.prof.toFixed(1)}u</span><span class="text-xs text-slate-500 font-medium">(${st.prof > 0 ? '+' : ''}${roi}%)</span></div></td>`;
+                const dec = st.w + st.l, wp = dec > 0 ? (st.w / dec * 100).toFixed(0) : '0', roi = st.wag > 0 ? (st.prof / st.wag * 100).toFixed(1) : '0.0';
+                const wrCI = wilsonCI(st.w, dec), roiCIVal = computeRoiCI(st.profits);
+                tr.innerHTML = `<td class="px-4 py-2 font-semibold text-slate-700"><div class="flex items-center gap-2">${st.dayName.substring(0, 3)}${idx === ti ? '<span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>' : ''}</div></td><td class="px-2 py-2 text-right text-xs"${wrTipAttr(wrCI, dec)}><div class="flex items-center justify-end gap-1.5"><span class="inline-block px-1.5 py-0.5 bg-slate-100 rounded text-slate-900 font-bold font-mono">${st.w}-${st.l}${st.p > 0 ? '-'+st.p : ''}</span><span class="text-xs ${winPctColor(wrCI)} font-semibold w-8 text-right">${wp}%</span></div>${wrCIBarHTML(wrCI, dec)}</td><td class="px-4 py-2 text-right text-xs tabular-nums"${roiTipAttr(roiCIVal, st.profits.length)}><div class="flex items-baseline justify-end gap-1"><span class="${profitColor(st.prof, roiCIVal)}">${st.prof > 0 ? '+' : ''}${st.prof.toFixed(1)}u</span><span class="text-xs ${ciEnabled ? sigClass(roiCIVal.lo, roiCIVal.hi, 0) : 'text-slate-500'} font-medium">(${st.prof > 0 ? '+' : ''}${roi}%)</span></div></td>`;
                 dayStatsTable.appendChild(tr);
             });
             if (dayStatsTable.children.length === 0) dayStatsTable.innerHTML = `<tr><td colspan="3" class="px-4 py-4 text-center text-slate-300 italic text-xs">No data</td></tr>`;
@@ -1148,9 +1275,7 @@
 
         function renderSingleRow(tb, r, maxP, minP, act, clickH = null) {
             const tr = document.createElement('tr'); if (clickH) { tr.onclick = () => clickH(r); tr.classList.add('cursor-pointer'); }
-            const isP = r.profit > 0, isL = r.profit < 0;
             tr.className = "hover:bg-slate-50";
-            let pcStyle = isP ? "text-emerald-600 font-bold" : (isL ? "text-rose-600 font-bold" : "text-slate-400");
             tr.innerHTML = `
                 <td class="px-4 py-2 font-semibold text-slate-700 text-xs">
                     <div class="flex items-center gap-2">
@@ -1158,18 +1283,18 @@
                         ${act ? '<span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>' : ''}
                     </div>
                 </td>
-                <td class="px-2 py-2 text-right text-xs">
+                <td class="px-2 py-2 text-right text-xs"${r.wrCI ? wrTipAttr(r.wrCI, r.decisions || 0) : ''}>
                     <div class="flex items-center justify-end gap-1.5">
                         <span class="inline-block px-1.5 py-0.5 bg-slate-100 rounded text-slate-900 font-bold font-mono">
                             ${r.w}-${r.l}${r.p > 0 ? '-'+r.p : ''}
                         </span>
-                        <span class="text-xs text-slate-500 font-semibold w-8 text-right">${r.winPct}%</span>
-                    </div>
+                        <span class="text-xs ${r.wrCI ? winPctColor(r.wrCI) : 'text-slate-500'} font-semibold w-8 text-right">${r.winPct}%</span>
+                    </div>${r.wrCI ? wrCIBarHTML(r.wrCI, r.decisions || 0) : ''}
                 </td>
-                <td class="px-4 py-2 text-right text-xs tabular-nums">
+                <td class="px-4 py-2 text-right text-xs tabular-nums"${r.roiCI ? roiTipAttr(r.roiCI, r.decisions || 0) : ''}>
                     <div class="flex items-baseline justify-end gap-1">
-                        <span class="${pcStyle}">${r.profit > 0 ? '+' : ''}${r.profit.toFixed(1)}u</span>
-                        <span class="text-xs text-slate-500 font-medium">(${r.profit > 0 ? '+' : ''}${r.roi}%)</span>
+                        <span class="${profitColor(r.profit, r.roiCI)}">${r.profit > 0 ? '+' : ''}${r.profit.toFixed(1)}u</span>
+                        <span class="text-xs ${r.roiCI && ciEnabled ? sigClass(r.roiCI.lo, r.roiCI.hi, 0) : 'text-slate-500'} font-medium">(${r.profit > 0 ? '+' : ''}${r.roi}%)</span>
                     </div>
                 </td>`;
             tb.appendChild(tr);
@@ -1206,6 +1331,36 @@
         function copyStats() { navigator.clipboard.writeText(modalStatsBox.textContent).then(() => { const bt = document.getElementById('modalCopyBtnText'), orig = bt.innerText, b = bt.parentElement; bt.innerText = "Copied!"; b.classList.replace('bg-slate-900', 'bg-emerald-600'); setTimeout(() => { bt.innerText = orig; b.classList.replace('bg-emerald-600', 'bg-slate-900'); }, 1500); }); }
         function openFullScreenLog() { isFullScreenLogOpen = true; fullScreenLogModal.classList.remove('hidden'); renderHeaders(fsTableHeaders); renderTable(cachedFilteredData, fsTableBody); document.body.style.overflow = 'hidden'; }
         function closeFullScreenLog() { isFullScreenLogOpen = false; fullScreenLogModal.classList.add('hidden'); document.body.style.overflow = ''; }
+
+        // CI tooltip (single shared element, event delegation)
+        const _ciTip = document.createElement('div');
+        _ciTip.className = 'ci-tip';
+        document.body.appendChild(_ciTip);
+        let _ciTarget = null;
+        document.addEventListener('mouseover', e => {
+            const el = e.target.closest('[data-ci-tip]');
+            if (el === _ciTarget) return;
+            _ciTarget = el;
+            if (el && el.dataset.ciTip) {
+                _ciTip.textContent = el.dataset.ciTip;
+                const r = el.getBoundingClientRect();
+                _ciTip.style.top = ((r.top > _ciTip.offsetHeight + 16 ? r.top - _ciTip.offsetHeight - 8 : r.bottom + 8) + window.scrollY) + 'px';
+                _ciTip.style.left = Math.max(8, Math.min(r.right - _ciTip.offsetWidth, window.innerWidth - _ciTip.offsetWidth - 8)) + 'px';
+                _ciTip.classList.add('show');
+            } else _ciTip.classList.remove('show');
+        });
+        document.addEventListener('touchstart', e => {
+            const el = e.target.closest('[data-ci-tip]');
+            if (el === _ciTarget) { _ciTip.classList.remove('show'); _ciTarget = null; return; }
+            _ciTarget = el;
+            if (el && el.dataset.ciTip) {
+                _ciTip.textContent = el.dataset.ciTip;
+                const r = el.getBoundingClientRect();
+                _ciTip.style.top = ((r.top > _ciTip.offsetHeight + 16 ? r.top - _ciTip.offsetHeight - 8 : r.bottom + 8) + window.scrollY) + 'px';
+                _ciTip.style.left = Math.max(8, Math.min(r.right - _ciTip.offsetWidth, window.innerWidth - _ciTip.offsetWidth - 8)) + 'px';
+                _ciTip.classList.add('show');
+            } else { _ciTip.classList.remove('show'); _ciTarget = null; }
+        }, { passive: true });
     </script>
 </body>
 </html>
