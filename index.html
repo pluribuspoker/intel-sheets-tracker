@@ -1124,10 +1124,10 @@
                 const s = rev.slice(0, r.c); if (s.length === 0) return;
                 const w = s.filter(d => d._stats.result === 'W').length, l = s.filter(d => d._stats.result === 'L').length, p = s.filter(d => d._stats.result === 'P').length, prof = s.reduce((sum, d) => sum + d._stats.profit, 0), wag = s.reduce((sum, d) => sum + d._stats.units, 0);
                 const dec = w + l, wp = dec > 0 ? (w / dec * 100).toFixed(0) : '0', roi = wag > 0 ? (prof / wag * 100).toFixed(1) : '0.0';
-                const wrCI = wilsonCI(w, dec), roiCIVal = computeRoiCI(s.map(d => d._stats.profit));
                 const tr = document.createElement('tr'); tr.className = "hover:bg-slate-50";
                 const pc = prof > 0 ? "text-emerald-600 font-bold" : (prof < 0 ? "text-rose-600 font-bold" : "text-slate-400");
-                tr.innerHTML = `<td class="px-4 py-2 font-semibold text-slate-700">${r.l}</td><td class="px-2 py-2 text-right text-xs"${wrTipAttr(wrCI, dec)}><div class="flex items-center justify-end gap-1.5"><span class="inline-block px-1.5 py-0.5 bg-slate-100 rounded text-slate-900 font-bold font-mono">${w}-${l}${p > 0 ? '-'+p : ''}</span><span class="inline-flex flex-col items-end"><span class="text-xs ${winPctColor(wrCI, parseFloat(wp))} font-semibold">${wp}%</span>${wrCIBarHTML(wrCI, dec)}</span></div></td><td class="px-4 py-2 text-right text-xs tabular-nums"><div class="flex items-baseline justify-end gap-1"><span class="${pc}">${prof > 0 ? '+' : ''}${prof.toFixed(1)}u</span><span class="text-xs text-slate-500 font-medium">(${prof > 0 ? '+' : ''}${roi}%)</span></div></td>`;
+                const wpC = parseFloat(wp) > 50 ? 'text-emerald-600' : (parseFloat(wp) < 50 ? 'text-rose-600' : 'text-slate-500');
+                tr.innerHTML = `<td class="px-4 py-2 font-semibold text-slate-700">${r.l}</td><td class="px-2 py-2 text-right text-xs"><div class="flex items-center justify-end gap-1.5"><span class="inline-block px-1.5 py-0.5 bg-slate-100 rounded text-slate-900 font-bold font-mono">${w}-${l}${p > 0 ? '-'+p : ''}</span><span class="text-xs ${wpC} font-semibold w-8 text-right">${wp}%</span></div></td><td class="px-4 py-2 text-right text-xs tabular-nums"><div class="flex items-baseline justify-end gap-1"><span class="${pc}">${prof > 0 ? '+' : ''}${prof.toFixed(1)}u</span><span class="text-xs text-slate-500 font-medium">(${prof > 0 ? '+' : ''}${roi}%)</span></div></td>`;
                 r.t.appendChild(tr);
             });
         }
